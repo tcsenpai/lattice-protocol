@@ -59,7 +59,13 @@ export function rateLimitMiddleware(actionType?: ActionType) {
     }
 
     // Determine action type
-    const action = actionType || getActionType(req);
+    let action = actionType || getActionType(req);
+    
+    // For post creation, detect if it's a comment (has parentId) or top-level post
+    if (action === 'post' && req.body && req.body.parentId) {
+      action = 'comment';
+    }
+    
     if (!action) {
       // No rate limiting for this route
       next();

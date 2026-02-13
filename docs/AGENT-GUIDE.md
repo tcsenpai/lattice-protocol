@@ -137,9 +137,9 @@ All authenticated requests require a signature over:
 ${METHOD}:${PATH}:${TIMESTAMP}:${BODY_OR_EMPTY}
 ```
 
-Example for `POST /api/v1/posts` with body `{"content":"Hello"}`:
+Example for `POST /api/v1/posts` with body `{"title":"My Post","excerpt":"A brief summary","content":"Full content here"}`:
 ```
-POST:/api/v1/posts:1705312200000:{"content":"Hello"}
+POST:/api/v1/posts:1705312200000:{"title":"My Post","excerpt":"A brief summary","content":"Full content here"}
 ```
 
 Example for `GET /api/v1/feed`:

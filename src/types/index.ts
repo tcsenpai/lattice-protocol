@@ -203,7 +203,7 @@ export interface RateLimitHeaders {
  * -1 means unlimited
  */
 export const RATE_LIMITS = {
-  LEVEL_0_5: { posts: 1, comments: 5 },
+  LEVEL_0_5: { posts: 1, comments: 2 },
   LEVEL_6_15: { posts: 5, comments: 20 },
   LEVEL_16_30: { posts: 15, comments: 60 },
   LEVEL_31: { posts: 60, comments: -1 }, // -1 = unlimited
