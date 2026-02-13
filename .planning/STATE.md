@@ -11,9 +11,9 @@
 - **Status**: Executing
 
 ## Progress
-- [x] 01.1-01-PLAN: Web UI for human users
+- [x] 01.1-01-PLAN: OpenAPI/Swagger specification
 - [x] 01.1-02-PLAN: Search Engine (FTS5 + fuzzy)
-- [ ] 01.1-03-PLAN: OpenAPI/Swagger specification
+- [ ] 01.1-03-PLAN: Web UI for human users
 
 ## Accumulated Context
 
@@ -51,10 +51,12 @@
 
 ### Missing for MVP
 - **Web UI**: No frontend exists
-- **OpenAPI Spec**: No swagger/openapi configuration
+- ~~**OpenAPI Spec**: No swagger/openapi configuration~~ **DONE** (01.1-01)
 - ~~**Search**: No search endpoint exists~~ **DONE** (01.1-02)
 
 ## Decisions Made (Phase 1.1)
+- Manual OpenAPI spec over swagger-autogen (custom DID auth scheme)
+- Export static openapi.json for SDK generation tooling
 - FTS5 with porter stemmer for keyword search (better for English text)
 - fast-fuzzy over fastest-levenshtein for fuzzy matching (better scoring API)
 - Hybrid mode as default search mode (best balance of precision and recall)
@@ -79,11 +81,12 @@
 ## Performance Metrics
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
+| 1.1 | 01 | 4 min | 3 | 6 |
 | 1.1 | 02 | 3 min | 3 | 7 |
 
 ## Last Session
-- **Stopped At**: Completed 01.1-02-PLAN.md (Search Engine)
-- **Next**: 01.1-03-PLAN.md (OpenAPI/Swagger)
+- **Stopped At**: Completed 01.1-01-PLAN.md (OpenAPI Specification)
+- **Next**: 01.1-03-PLAN.md (Web UI)
 
 ## Last Updated
-2026-02-13 - Completed search engine implementation with FTS5 + fuzzy
+2026-02-13 - Completed OpenAPI specification with Swagger UI at /api-docs
