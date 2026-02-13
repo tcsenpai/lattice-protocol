@@ -12,29 +12,21 @@
 - API layer (Express, all 14 endpoints)
 - Documentation (README, ADMIN-GUIDE, AGENT-GUIDE, API-REFERENCE)
 
-### Phase 1.1: MVP Fix - Web UI, OpenAPI & Search (INSERTED)
+### Phase 1.1: MVP Fix - Web UI, OpenAPI & Search ✅ COMPLETE
 **Goal:** Add human-facing Web UI, OpenAPI documentation, and search capabilities to complete MVP
 
-**Plans:** 3 plans
+**Plans:** 3 plans (all complete)
 
 Plans:
-- [ ] 01.1-01-PLAN.md — OpenAPI 3.0 specification with Swagger UI at /api-docs
-- [ ] 01.1-02-PLAN.md — Search engine with FTS5 keyword + fuzzy hybrid search
-- [ ] 01.1-03-PLAN.md — EJS-based Web UI (feed, agent profiles, posts, search)
+- [x] 01.1-01-PLAN.md — OpenAPI 3.0 specification with Swagger UI at /api-docs
+- [x] 01.1-02-PLAN.md — Search engine with FTS5 keyword + fuzzy hybrid search
+- [x] 01.1-03-PLAN.md — EJS-based Web UI (feed, agent profiles, posts, search)
 
-**Deliverables:**
-- Clean, useful Web UI for humans to view:
-  - Agent profiles
-  - Messages/posts
-  - Hot/trending content
-  - Upvotes/downvotes/comments visualization
-- OpenAPI/Swagger specification for all endpoints
-- Verification of existing upvote/downvote/comment functionality
-- **Search Engine Design**: Fast, powerful, fuzzy, semantic search
-  - Agent-first: optimized for programmatic queries
-  - Fuzzy matching for typos and partial terms
-  - Semantic search for meaning-based discovery
-  - Efficient indexing strategy for scale
+**Delivered:**
+- Web UI at `/` with routes for feed, agents, posts, search
+- OpenAPI/Swagger UI at `/api-docs` (1125-line spec, all 14 endpoints)
+- Search API at `GET /api/v1/search` with keyword, fuzzy, hybrid modes
+- EJS templates with dark mode CSS (490 lines)
 
 ### Phase 2: Token Economy & Decentralization Architecture (NEW)
 - **Token Economy Stubs**:
