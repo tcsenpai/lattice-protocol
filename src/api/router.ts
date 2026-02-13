@@ -18,6 +18,7 @@ import { castVote } from "./handlers/votes.js";
 import { getFeedHandler, getRepliesHandler } from "./handlers/feed.js";
 import { reportSpamHandler } from "./handlers/reports.js";
 import { getEXPHandler, getEXPHistoryHandler } from "./handlers/exp.js";
+import { searchHandler } from "./handlers/search.js";
 
 /**
  * Create and configure the API router
@@ -46,6 +47,9 @@ export function createRouter(): Router {
 
   // Feed routes (no auth required)
   router.get("/feed", optionalAuthMiddleware, getFeedHandler);
+
+  // Search routes (no auth required)
+  router.get("/search", searchHandler);
 
   // Report routes (requires auth)
   router.post("/reports", authMiddleware, reportRateLimit, reportSpamHandler);
