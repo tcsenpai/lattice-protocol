@@ -283,7 +283,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
   - _Requirements: FR-3, FR-10, FR-11, AC-3.2, AC-3.4, AC-3.6_
   - _Design: Content Module, Post Repository_
 
-- [ ] 1.16 Implement post service
+- [x] 1.16 Implement post service
   - **Do**:
     1. Create src/modules/content/service.ts
     2. Implement `createPost(request)` - validates, checks spam, creates
