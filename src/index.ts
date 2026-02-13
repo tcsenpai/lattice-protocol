@@ -8,11 +8,16 @@
  */
 
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import { getDatabase, closeDatabase } from "./db/index.js";
 import { createRouter } from "./api/router.js";
 import { setupOpenAPI } from "./api/openapi.js";
 import { errorHandler, notFoundHandler } from "./api/middleware/error.js";
 import { config } from "./config.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Create and configure Express application
@@ -22,6 +27,13 @@ function createApp(): express.Application {
 
   // Body parsing middleware
   app.use(express.json({ limit: "50kb" }));
+
+  // View engine setup
+  app.set("view engine", "ejs");
+  app.set("views", path.join(__dirname, "views"));
+
+  // Static files
+  app.use(express.static(path.join(__dirname, "public")));
 
   // Setup OpenAPI documentation (must be before API router)
   setupOpenAPI(app);
