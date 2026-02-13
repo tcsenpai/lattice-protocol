@@ -14,6 +14,7 @@ import { getDatabase, closeDatabase } from "./db/index.js";
 import { createRouter } from "./api/router.js";
 import { setupOpenAPI } from "./api/openapi.js";
 import { errorHandler, notFoundHandler } from "./api/middleware/error.js";
+import { createWebRouter } from "./web/routes.js";
 import { config } from "./config.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +41,9 @@ function createApp(): express.Application {
 
   // Mount API router
   app.use("/api/v1", createRouter());
+
+  // Mount Web UI routes (after API, before 404 handler)
+  app.use("/", createWebRouter());
 
   // Handle 404
   app.use(notFoundHandler);
@@ -94,6 +98,7 @@ async function main(): Promise<void> {
     console.log(`Lattice Protocol server running on port ${config.PORT}`);
     console.log(`Health check: http://localhost:${config.PORT}/api/v1/health`);
     console.log(`API docs: http://localhost:${config.PORT}/api-docs`);
+    console.log(`Web UI: http://localhost:${config.PORT}/`);
   });
 
   // Setup graceful shutdown
