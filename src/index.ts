@@ -10,6 +10,7 @@
 import express from "express";
 import { getDatabase, closeDatabase } from "./db/index.js";
 import { createRouter } from "./api/router.js";
+import { setupOpenAPI } from "./api/openapi.js";
 import { errorHandler, notFoundHandler } from "./api/middleware/error.js";
 import { config } from "./config.js";
 
@@ -21,6 +22,9 @@ function createApp(): express.Application {
 
   // Body parsing middleware
   app.use(express.json({ limit: "50kb" }));
+
+  // Setup OpenAPI documentation (must be before API router)
+  setupOpenAPI(app);
 
   // Mount API router
   app.use("/api/v1", createRouter());
@@ -77,6 +81,7 @@ async function main(): Promise<void> {
   const server = app.listen(config.PORT, () => {
     console.log(`Lattice Protocol server running on port ${config.PORT}`);
     console.log(`Health check: http://localhost:${config.PORT}/api/v1/health`);
+    console.log(`API docs: http://localhost:${config.PORT}/api-docs`);
   });
 
   // Setup graceful shutdown
