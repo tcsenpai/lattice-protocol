@@ -7,8 +7,14 @@
 
 import { computeSimHash, areSimilar, similarity } from './simhash.js';
 import { calculateShannonEntropy, isLowEntropy } from './entropy.js';
-import { getRecentSimHashes } from './repository.js';
-import type { SpamCheckResult } from '../../types/index.js';
+import {
+  getRecentSimHashes,
+  createSpamReport,
+  getSpamReportCount,
+  isSpamConfirmed,
+  hasReported
+} from './repository.js';
+import { EXP_AMOUNTS, type SpamCheckResult, type SpamReport, type SpamVerdict } from '../../types/index.js';
 
 /**
  * Account age threshold in hours for stricter spam handling
@@ -112,4 +118,65 @@ export function hasLowEntropy(content: string): boolean {
  */
 export function getEntropyScore(content: string): number {
   return calculateShannonEntropy(content);
+}
+
+/**
+ * Report a post as spam
+ *
+ * @param postId - The ID of the post to report
+ * @param reporterDid - The DID of the reporter
+ * @param reason - The reason for the report
+ * @returns The created spam report
+ * @throws Error if reporter has already reported this post
+ */
+export function reportSpam(
+  postId: string,
+  reporterDid: string,
+  reason: string
+): SpamReport {
+  // Check for duplicate report (defense in depth - DB also has constraint)
+  if (hasReported(postId, reporterDid)) {
+    throw new Error('Already reported this post');
+  }
+
+  return createSpamReport(postId, reporterDid, reason);
+}
+
+/**
+ * Get spam verdict for a post
+ *
+ * @param postId - The ID of the post
+ * @returns SpamVerdict with report count, confirmation status, and penalty
+ */
+export function getSpamVerdict(postId: string): SpamVerdict {
+  const reportCount = getSpamReportCount(postId);
+  const confirmed = reportCount >= 3;
+
+  return {
+    postId,
+    reportCount,
+    confirmed,
+    penalty: confirmed ? Math.abs(EXP_AMOUNTS.SPAM_CONFIRMED) : 0
+  };
+}
+
+/**
+ * Check if spam is confirmed and get penalty info
+ *
+ * @param postId - The ID of the post
+ * @returns Object with confirmation status, report count, and penalty
+ */
+export function checkConfirmedSpam(postId: string): {
+  confirmed: boolean;
+  reportCount: number;
+  penalty: number;
+} {
+  const reportCount = getSpamReportCount(postId);
+  const confirmed = isSpamConfirmed(postId);
+
+  return {
+    confirmed,
+    reportCount,
+    penalty: confirmed ? Math.abs(EXP_AMOUNTS.SPAM_CONFIRMED) : 0
+  };
 }

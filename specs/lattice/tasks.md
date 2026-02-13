@@ -244,7 +244,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
   - _Requirements: FR-6, AC-6.3, AC-6.5, AC-6.6, NFR-3_
   - _Design: Spam Module, Spam Service_
 
-- [ ] 1.14 Implement spam reporting
+- [x] 1.14 Implement spam reporting
   - **Do**:
     1. Add to src/modules/spam/service.ts
     2. Implement `reportSpam(postId, reporterDid, reason)` - creates report
