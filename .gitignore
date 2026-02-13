@@ -1,0 +1,21 @@
+specs/.current-spec
+**/.progress.md
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Database
+data/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
