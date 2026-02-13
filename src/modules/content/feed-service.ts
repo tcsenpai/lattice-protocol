@@ -12,6 +12,8 @@ const DEFAULT_LIMIT = 20;
 
 interface PostRow {
   id: string;
+  title: string | null;
+  excerpt: string | null;
   content: string;
   content_type: string;
   parent_id: string | null;
@@ -35,6 +37,8 @@ interface PostRow {
 function rowToPostWithAuthor(row: PostRow): PostWithAuthor {
   return {
     id: row.id,
+    title: row.title,
+    excerpt: row.excerpt,
     content: row.content,
     contentType: row.content_type as "TEXT",
     parentId: row.parent_id,
@@ -70,7 +74,7 @@ export function getFeed(query: FeedQuery): FeedResponse {
   // Build query with conditions
   let sql = `
     SELECT
-      p.id, p.content, p.content_type, p.parent_id, p.author_did,
+      p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
       p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
@@ -158,7 +162,7 @@ export function getReplies(
 
   let sql = `
     SELECT
-      p.id, p.content, p.content_type, p.parent_id, p.author_did,
+      p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
       p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
@@ -209,7 +213,7 @@ export function getPostWithAuthor(postId: string): PostWithAuthor | null {
 
   const sql = `
     SELECT
-      p.id, p.content, p.content_type, p.parent_id, p.author_did,
+      p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
       p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,

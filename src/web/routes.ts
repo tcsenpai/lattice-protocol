@@ -171,6 +171,13 @@ export function createWebRouter(): Router {
     });
   });
 
+  // About/Landing page
+  router.get("/about", (_req: Request, res: Response) => {
+    renderWithLayout(res, "about", {
+      title: "About",
+    });
+  });
+
   // Agent Guide page
   router.get("/guide", (req: Request, res: Response) => {
     // Build the base URL from the request

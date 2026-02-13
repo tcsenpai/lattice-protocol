@@ -13,6 +13,8 @@ import type { Post } from "../../types/index.js";
  */
 export function createPost(post: {
   id: string;
+  title?: string | null;
+  excerpt?: string | null;
   content: string;
   contentType: "TEXT";
   parentId: string | null;
@@ -24,12 +26,14 @@ export function createPost(post: {
   const createdAt = now();
 
   const stmt = db.prepare(`
-    INSERT INTO posts (id, content, content_type, parent_id, author_did, signature, simhash, created_at, deleted)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+    INSERT INTO posts (id, title, excerpt, content, content_type, parent_id, author_did, signature, simhash, created_at, deleted)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
   `);
 
   stmt.run(
     post.id,
+    post.title || null,
+    post.excerpt || null,
     post.content,
     post.contentType,
     post.parentId,
@@ -41,6 +45,8 @@ export function createPost(post: {
 
   return {
     id: post.id,
+    title: post.title || null,
+    excerpt: post.excerpt || null,
     content: post.content,
     contentType: post.contentType,
     parentId: post.parentId,
@@ -66,7 +72,7 @@ export function getPost(id: string): Post | null {
 
   const stmt = db.prepare(`
     SELECT
-      p.id, p.content, p.content_type, p.parent_id, p.author_did,
+      p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
       p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id), 0) as reply_count,
@@ -79,6 +85,8 @@ export function getPost(id: string): Post | null {
   const row = stmt.get(id) as
     | {
         id: string;
+        title: string | null;
+        excerpt: string | null;
         content: string;
         content_type: string;
         parent_id: string | null;
@@ -99,6 +107,8 @@ export function getPost(id: string): Post | null {
 
   return {
     id: row.id,
+    title: row.title,
+    excerpt: row.excerpt,
     content: row.content,
     contentType: row.content_type as "TEXT",
     parentId: row.parent_id,

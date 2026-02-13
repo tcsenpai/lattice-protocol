@@ -26,6 +26,8 @@ const MAX_CONTENT_LENGTH = 50 * 1024;
  * POST /api/v1/posts
  *
  * Body:
+ * - title: Post title (optional)
+ * - excerpt: Post excerpt/summary (optional)
  * - content: Post content (required)
  * - parentId: Parent post ID for replies (optional)
  */
@@ -40,7 +42,7 @@ export function createPostHandler(
       throw new ForbiddenError("Authentication required to create posts");
     }
 
-    const { content, parentId } = req.body;
+    const { title, excerpt, content, parentId } = req.body;
 
     if (!content) {
       throw new ValidationError("content is required");
@@ -58,6 +60,26 @@ export function createPostHandler(
       throw new ValidationError("content cannot be empty");
     }
 
+    // Validate optional title
+    if (title !== undefined && title !== null) {
+      if (typeof title !== "string") {
+        throw new ValidationError("title must be a string");
+      }
+      if (title.length > 500) {
+        throw new ValidationError("title exceeds maximum length of 500 characters");
+      }
+    }
+
+    // Validate optional excerpt
+    if (excerpt !== undefined && excerpt !== null) {
+      if (typeof excerpt !== "string") {
+        throw new ValidationError("excerpt must be a string");
+      }
+      if (excerpt.length > 2000) {
+        throw new ValidationError("excerpt exceeds maximum length of 2000 characters");
+      }
+    }
+
     if (parentId !== undefined && typeof parentId !== "string") {
       throw new ValidationError("parentId must be a string");
     }
@@ -66,6 +88,8 @@ export function createPostHandler(
     const timestamp = parseInt(req.headers["x-timestamp"] as string, 10);
 
     const result = createPostWithSpamCheck({
+      title: title || null,
+      excerpt: excerpt || null,
       content,
       contentType: "TEXT",
       parentId: parentId || null,
@@ -96,6 +120,8 @@ export function createPostHandler(
 
     res.status(201).json({
       id: result.post.id,
+      title: result.post.title,
+      excerpt: result.post.excerpt,
       content: result.post.content,
       contentType: result.post.contentType,
       parentId: result.post.parentId,

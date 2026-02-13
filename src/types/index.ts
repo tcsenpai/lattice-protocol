@@ -71,6 +71,8 @@ export interface RateLimitResult {
 // ============================================================================
 
 export interface CreatePostRequest {
+  title?: string | null;
+  excerpt?: string | null;
   content: string;
   contentType: "TEXT";
   parentId: string | null;
@@ -81,6 +83,8 @@ export interface CreatePostRequest {
 
 export interface Post {
   id: string;
+  title?: string | null;
+  excerpt?: string | null;
   content: string;
   contentType: "TEXT";
   parentId: string | null;

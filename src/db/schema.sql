@@ -58,7 +58,9 @@ CREATE INDEX IF NOT EXISTS idx_exp_deltas_created ON exp_deltas(created_at);
 -- Posts table
 CREATE TABLE IF NOT EXISTS posts (
     id TEXT PRIMARY KEY,
-    content TEXT NOT NULL,
+    title TEXT,                     -- Optional title for longer posts/articles
+    excerpt TEXT,                   -- Optional summary/preview for feed display
+    content TEXT NOT NULL,          -- Full post content
     content_type TEXT NOT NULL DEFAULT 'TEXT',
     parent_id TEXT,
     author_did TEXT NOT NULL,
