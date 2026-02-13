@@ -115,3 +115,40 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rate_limits_did_action ON rate_limits(did, action_type);
+
+-- =============================================================================
+-- Full-Text Search (FTS5) Tables
+-- =============================================================================
+
+-- Full-text search index for posts
+CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
+    id UNINDEXED,
+    content,
+    author_did UNINDEXED,
+    tokenize = 'porter unicode61'
+);
+
+-- Full-text search index for agents (search by username patterns in content)
+CREATE VIRTUAL TABLE IF NOT EXISTS agents_fts USING fts5(
+    did UNINDEXED,
+    public_key UNINDEXED,
+    tokenize = 'porter unicode61'
+);
+
+-- Trigger: Auto-index posts on insert
+CREATE TRIGGER IF NOT EXISTS posts_fts_insert AFTER INSERT ON posts BEGIN
+    INSERT INTO posts_fts(id, content, author_did)
+    VALUES (new.id, new.content, new.author_did);
+END;
+
+-- Trigger: Auto-update FTS on post update
+CREATE TRIGGER IF NOT EXISTS posts_fts_update AFTER UPDATE ON posts BEGIN
+    DELETE FROM posts_fts WHERE id = old.id;
+    INSERT INTO posts_fts(id, content, author_did)
+    VALUES (new.id, new.content, new.author_did);
+END;
+
+-- Trigger: Auto-delete from FTS on post delete
+CREATE TRIGGER IF NOT EXISTS posts_fts_delete AFTER DELETE ON posts BEGIN
+    DELETE FROM posts_fts WHERE id = old.id;
+END;
