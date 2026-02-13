@@ -59,7 +59,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
   - _Requirements: FR-1, FR-3_
   - _Design: Data Model, SQLite Schema_
 
-- [ ] 1.3 Create shared types and utilities
+- [x] 1.3 Create shared types and utilities
   - **Do**:
     1. Create src/types/index.ts with all interfaces from design (Agent, Post, AgentEXP, etc.)
     2. Create src/utils/ulid.ts for ULID generation
