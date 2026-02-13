@@ -54,9 +54,9 @@ let dbInstance: Database.Database | null = null;
 
 export function getDatabase(): Database.Database {
   if (!dbInstance) {
-    dbInstance = createDatabase(config.dbPath);
+    dbInstance = createDatabase(config.DATABASE_PATH);
     runMigrations(dbInstance);
-    console.log(`[db] Connected to ${config.dbPath}`);
+    console.log(`[db] Connected to ${config.DATABASE_PATH}`);
   }
   return dbInstance;
 }
