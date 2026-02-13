@@ -268,7 +268,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
 
 ### 1.5 Content Module
 
-- [ ] 1.15 Implement post repository
+- [x] 1.15 Implement post repository
   - **Do**:
     1. Create src/modules/content/repository.ts
     2. Implement `createPost(post)` - inserts with ULID, simhash, timestamp
