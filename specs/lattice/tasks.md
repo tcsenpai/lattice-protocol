@@ -93,7 +93,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
   - _Requirements: FR-1, AC-1.1_
   - _Design: Identity Module, DID Service_
 
-- [ ] 1.5 Implement agent repository
+- [x] 1.5 Implement agent repository
   - **Do**:
     1. Create src/modules/identity/repository.ts
     2. Implement `createAgent(did, publicKey)` - inserts agent record
@@ -108,7 +108,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
   - _Requirements: FR-1, AC-1.2, AC-1.5_
   - _Design: Identity Module, Agent Repository_
 
-- [ ] 1.6 Implement attestation service
+- [x] 1.6 Implement attestation service
   - **Do**:
     1. Create src/modules/identity/attestation-service.ts
     2. Implement `createAttestation(agentDid, attestorDid, signature)` - records attestation
