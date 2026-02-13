@@ -131,7 +131,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
 
 ### 1.3 EXP Module
 
-- [ ] 1.7 Implement EXP repository
+- [x] 1.7 Implement EXP repository
   - **Do**:
     1. Create src/modules/exp/repository.ts
     2. Implement `createBalance(did)` - initialize with 0 EXP
@@ -146,7 +146,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
   - _Requirements: FR-5, AC-5.4, AC-5.5, AC-5.6_
   - _Design: EXP Module, EXP Repository_
 
-- [ ] 1.8 Implement level calculator
+- [x] 1.8 Implement level calculator
   - **Do**:
     1. Create src/modules/exp/level-calculator.ts
     2. Implement `calculateLevel(totalEXP)` - formula: `floor(log10(totalEXP + 1) * 10)`
