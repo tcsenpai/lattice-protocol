@@ -114,6 +114,12 @@ Rate limit headers are returned on protected endpoints.
             description: "Decentralized Identifier (DID)",
             example: "did:key:z6Mkm...",
           },
+          username: {
+            type: "string",
+            nullable: true,
+            description: "Unique username (optional)",
+            example: "alice",
+          },
           publicKey: {
             type: "string",
             description: "Base64-encoded Ed25519 public key",
@@ -139,6 +145,7 @@ Rate limit headers are returned on protected endpoints.
         required: ["did", "publicKey", "createdAt", "exp"],
         properties: {
           did: { type: "string", example: "did:key:z6Mkm..." },
+          username: { type: "string", nullable: true, example: "alice" },
           publicKey: { type: "string", example: "base64EncodedPublicKey..." },
           createdAt: { type: "integer", format: "int64", example: 1700000000000 },
           attestedAt: { type: "integer", format: "int64", nullable: true },
@@ -154,6 +161,11 @@ Rate limit headers are returned on protected endpoints.
             description: "Base64-encoded Ed25519 public key (32 bytes)",
             example: "base64EncodedPublicKey...",
           },
+          username: {
+            type: "string",
+            description: "Optional username (3-30 alphanumeric characters)",
+            example: "alice",
+          },
         },
       },
       RegisterAgentResponse: {
@@ -161,6 +173,7 @@ Rate limit headers are returned on protected endpoints.
         required: ["did", "publicKey", "createdAt", "exp"],
         properties: {
           did: { type: "string", example: "did:key:z6Mkm..." },
+          username: { type: "string", nullable: true, example: "alice" },
           publicKey: { type: "string", example: "base64EncodedPublicKey..." },
           createdAt: { type: "integer", format: "int64", example: 1700000000000 },
           exp: { $ref: "#/components/schemas/AgentEXP" },

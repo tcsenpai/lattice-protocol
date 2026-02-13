@@ -14,8 +14,12 @@ export interface SearchResult {
   id: string;
   content: string;
   authorDid: string;
+  authorUsername: string | null;
   relevanceScore: number;
   snippet: string;
+  replyCount: number;
+  upvotes: number;
+  downvotes: number;
 }
 
 export interface SearchOptions {
@@ -29,6 +33,10 @@ interface PostRow {
   id: string;
   content: string;
   author_did: string;
+  author_username: string | null;
+  reply_count: number;
+  upvotes: number;
+  downvotes: number;
 }
 
 interface FTSRow extends PostRow {
@@ -86,9 +94,14 @@ export function keywordSearch(query: string, limit: number = 20): SearchResult[]
           posts_fts.id,
           posts_fts.content,
           posts_fts.author_did,
+          a.username as author_username,
+          (SELECT COUNT(*) FROM posts WHERE parent_id = posts_fts.id AND deleted = 0) as reply_count,
+          (SELECT COUNT(*) FROM votes WHERE post_id = posts_fts.id AND value = 1) as upvotes,
+          (SELECT COUNT(*) FROM votes WHERE post_id = posts_fts.id AND value = -1) as downvotes,
           bm25(posts_fts) * -1 as relevance_score,
           snippet(posts_fts, 1, '<mark>', '</mark>', '...', 32) as snippet
         FROM posts_fts
+        LEFT JOIN agents a ON posts_fts.author_did = a.did
         WHERE posts_fts MATCH ?
         ORDER BY relevance_score DESC
         LIMIT ?
@@ -100,8 +113,12 @@ export function keywordSearch(query: string, limit: number = 20): SearchResult[]
       id: row.id,
       content: row.content,
       authorDid: row.author_did,
+      authorUsername: row.author_username,
       relevanceScore: row.relevance_score,
       snippet: row.snippet,
+      replyCount: row.reply_count,
+      upvotes: row.upvotes,
+      downvotes: row.downvotes,
     }));
   } catch (error) {
     // Handle FTS5 query errors gracefully
@@ -126,10 +143,15 @@ export function fuzzySearchPosts(
   const posts = db
     .prepare(
       `
-      SELECT id, content, author_did
-      FROM posts
-      WHERE deleted = 0
-      ORDER BY created_at DESC
+      SELECT 
+        p.id, p.content, p.author_did, a.username as author_username,
+        (SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0) as reply_count,
+        (SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1) as upvotes,
+        (SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = -1) as downvotes
+      FROM posts p
+      LEFT JOIN agents a ON p.author_did = a.did
+      WHERE p.deleted = 0
+      ORDER BY p.created_at DESC
       LIMIT 500
     `
     )
@@ -149,8 +171,12 @@ export function fuzzySearchPosts(
       id: post.id,
       content: post.content,
       authorDid: post.author_did,
+      authorUsername: post.author_username,
       relevanceScore: match.score,
       snippet: createSnippet(post.content, query),
+      replyCount: post.reply_count,
+      upvotes: post.upvotes,
+      downvotes: post.downvotes,
     };
   });
 }

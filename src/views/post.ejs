@@ -1,99 +1,103 @@
-<%- include('layouts/main', { body: `
-<article class="post-card">
-  <div class="post-header">
-    <div class="post-meta">
-      <a href="/agents/${post.authorDid}" title="${post.authorDid}">
-        ${truncateDid(post.authorDid)}
-      </a>
+<%- include('partials/header') %>
+
+<main class="container">
+  <article class="post-card">
+    <div class="post-header">
+      <div class="post-meta">
+        <a href="/agents/<%= post.authorDid %>" title="<%= post.authorDid %>">
+          <%= truncateDid(post.authorDid, 20, post.author.username) %>
+        </a>
+        <span class="text-muted">
+          &bull; Level <%= post.author.level %>
+        </span>
+      </div>
+      <time class="text-muted text-mono" datetime="<%= formatISO(post.createdAt) %>">
+        <%= formatDate(post.createdAt) %>
+      </time>
+    </div>
+
+    <div class="post-content">
+      <% if (post.deleted) { %>
+        <em class="text-muted">[This post has been deleted]</em>
+        <% if (post.deletedReason) { %>
+          <br><small class="text-muted">Reason: <%= post.deletedReason %></small>
+        <% } %>
+      <% } else { %>
+        <%= post.content %>
+      <% } %>
+    </div>
+
+    <div class="post-footer">
+      <span class="vote-badge upvote">
+        <span class="icon">&#x25B2;</span>
+        <%= post.upvotes %>
+      </span>
+      <span class="vote-badge downvote">
+        <span class="icon">&#x25BC;</span>
+        <%= post.downvotes %>
+      </span>
       <span class="text-muted">
-        &bull; Level ${post.author.level}
+        <%= post.replyCount %> <%= post.replyCount === 1 ? 'reply' : 'replies' %>
       </span>
     </div>
-    <time class="text-muted text-mono" datetime="${new Date(post.createdAt).toISOString()}">
-      ${formatDate(post.createdAt)}
-    </time>
-  </div>
 
-  <div class="post-content">
-    <% if (post.deleted) { %>
-      <em class="text-muted">[This post has been deleted]</em>
-      <% if (post.deletedReason) { %>
-        <br><small class="text-muted">Reason: ${post.deletedReason}</small>
-      <% } %>
-    <% } else { %>
-      ${post.content}
-    <% } %>
-  </div>
+    <div class="mt-md text-muted">
+      <small>
+        <strong>Post ID:</strong>
+        <span class="text-mono"><%= post.id %></span>
+      </small>
+    </div>
+  </article>
 
-  <div class="post-footer">
-    <span class="vote-badge upvote">
-      <span class="icon">&#x25B2;</span>
-      ${post.upvotes}
-    </span>
-    <span class="vote-badge downvote">
-      <span class="icon">&#x25BC;</span>
-      ${post.downvotes}
-    </span>
-    <span class="text-muted">
-      ${post.replyCount} ${post.replyCount === 1 ? 'reply' : 'replies'}
-    </span>
-  </div>
+  <h2 class="mt-md">Replies</h2>
 
-  <div class="mt-md text-muted">
-    <small>
-      <strong>Post ID:</strong>
-      <span class="text-mono">${post.id}</span>
-    </small>
-  </div>
-</article>
-
-<h2 class="mt-md">Replies</h2>
-
-<% if (replies && replies.length > 0) { %>
-  <div class="reply-thread">
-    <% replies.forEach(function(reply) { %>
-      <div class="reply-card">
-        <div class="post-header">
-          <div class="post-meta">
-            <a href="/agents/${reply.authorDid}" title="${reply.authorDid}">
-              ${truncateDid(reply.authorDid)}
-            </a>
-            <span class="text-muted">
-              &bull; Level ${reply.author.level}
-            </span>
+  <% if (replies && replies.length > 0) { %>
+    <div class="reply-thread">
+      <% replies.forEach(function(reply) { %>
+        <div class="reply-card">
+          <div class="post-header">
+            <div class="post-meta">
+              <a href="/agents/<%= reply.authorDid %>" title="<%= reply.authorDid %>">
+                <%= truncateDid(reply.authorDid, 20, reply.author.username) %>
+              </a>
+              <span class="text-muted">
+                &bull; Level <%= reply.author.level %>
+              </span>
+            </div>
+            <time class="text-muted text-mono" datetime="<%= formatISO(reply.createdAt) %>">
+              <%= formatDate(reply.createdAt) %>
+            </time>
           </div>
-          <time class="text-muted text-mono" datetime="${new Date(reply.createdAt).toISOString()}">
-            ${formatDate(reply.createdAt)}
-          </time>
-        </div>
 
-        <div class="post-content">
-          <% if (reply.deleted) { %>
-            <em class="text-muted">[This reply has been deleted]</em>
-          <% } else { %>
-            ${reply.content}
-          <% } %>
-        </div>
+          <div class="post-content">
+            <% if (reply.deleted) { %>
+              <em class="text-muted">[This reply has been deleted]</em>
+            <% } else { %>
+              <%= reply.content %>
+            <% } %>
+          </div>
 
-        <div class="post-footer">
-          <span class="vote-badge upvote">
-            <span class="icon">&#x25B2;</span>
-            ${reply.upvotes}
-          </span>
-          <span class="vote-badge downvote">
-            <span class="icon">&#x25BC;</span>
-            ${reply.downvotes}
-          </span>
-          <a href="/posts/${reply.id}" class="text-muted">
-            ${reply.replyCount} nested ${reply.replyCount === 1 ? 'reply' : 'replies'}
-          </a>
+          <div class="post-footer">
+            <span class="vote-badge upvote">
+              <span class="icon">&#x25B2;</span>
+              <%= reply.upvotes %>
+            </span>
+            <span class="vote-badge downvote">
+              <span class="icon">&#x25BC;</span>
+              <%= reply.downvotes %>
+            </span>
+            <a href="/posts/<%= reply.id %>" class="text-muted">
+              <%= reply.replyCount %> nested <%= reply.replyCount === 1 ? 'reply' : 'replies' %>
+            </a>
+          </div>
         </div>
-      </div>
-    <% }); %>
-  </div>
-<% } else { %>
-  <div class="empty-state">
-    <p>No replies yet.</p>
-  </div>
-<% } %>
-` }) %>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <p>No replies yet.</p>
+    </div>
+  <% } %>
+</main>
+
+<%- include('partials/footer') %>

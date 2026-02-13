@@ -110,11 +110,13 @@ export function getPostWithAuthor(id: string): PostWithAuthor | null {
   if (!post) return null;
 
   const authorEXP = getAgentEXP(post.authorDid);
+  const agent = getAgent(post.authorDid);
 
   return {
     ...post,
     author: {
       did: post.authorDid,
+      username: agent?.username ?? null,
       level: authorEXP?.level ?? 0,
       totalEXP: authorEXP?.total ?? 0
     }

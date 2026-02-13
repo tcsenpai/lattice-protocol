@@ -6,9 +6,10 @@
 
 import type { Request, Response, NextFunction } from "express";
 import { generateDIDKey } from "../../modules/identity/did-service.js";
-import { createAgent, getAgent } from "../../modules/identity/repository.js";
+import { createAgent, getAgent, getAgentByUsername } from "../../modules/identity/repository.js";
 import { initializeAgentEXP, getAgentEXP } from "../../modules/exp/service.js";
 import { NotFoundError, ValidationError, ConflictError } from "../middleware/error.js";
+import { logAgentAction } from "../middleware/logger.js";
 
 /**
  * Register a new agent
@@ -23,7 +24,7 @@ export function registerAgent(
   next: NextFunction
 ): void {
   try {
-    const { publicKey } = req.body;
+    const { publicKey, username } = req.body;
 
     if (!publicKey) {
       throw new ValidationError("publicKey is required");
@@ -31,6 +32,27 @@ export function registerAgent(
 
     if (typeof publicKey !== "string") {
       throw new ValidationError("publicKey must be a base64 string");
+    }
+
+    // Validate username if provided
+    if (username !== undefined && username !== null) {
+      if (typeof username !== "string") {
+        throw new ValidationError("username must be a string");
+      }
+      if (username.length < 3 || username.length > 30) {
+        throw new ValidationError("username must be between 3 and 30 characters");
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        throw new ValidationError(
+          "username must contain only letters, numbers, and underscores"
+        );
+      }
+
+      // Check if username is taken
+      const existingUsername = getAgentByUsername(username);
+      if (existingUsername) {
+        throw new ConflictError("Username already taken");
+      }
     }
 
     // Decode public key
@@ -55,16 +77,20 @@ export function registerAgent(
     }
 
     // Create agent record
-    createAgent(did, publicKey);
+    createAgent(did, publicKey, username || null);
 
     // Initialize EXP balance
     initializeAgentEXP(did);
+
+    // Log agent registration
+    logAgentAction("REGISTER", did);
 
     // Get agent EXP
     const expInfo = getAgentEXP(did);
 
     res.status(201).json({
       did,
+      username: username || null,
       publicKey,
       createdAt: Date.now(),
       exp: expInfo,
@@ -99,6 +125,7 @@ export function getAgentInfo(
 
     res.json({
       did: agent.did,
+      username: agent.username,
       publicKey: agent.publicKey,
       createdAt: agent.createdAt,
       attestedAt: agent.attestedAt,

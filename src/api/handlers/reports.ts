@@ -7,6 +7,7 @@ import type { Request, Response, NextFunction } from "express";
 import { reportSpam } from "../../modules/spam/service.js";
 import { getPost } from "../../modules/content/repository.js";
 import { ValidationError, NotFoundError, ForbiddenError } from "../middleware/error.js";
+import { logAgentAction } from "../middleware/logger.js";
 
 /**
  * Valid spam report reasons
@@ -66,6 +67,13 @@ export function reportSpamHandler(
 
     // Create report
     const report = reportSpam(postId, reporterDid, reason);
+
+    // Log report
+    logAgentAction("REPORT", reporterDid, { 
+      postId, 
+      reason,
+      targetDid: post.authorDid 
+    });
 
     res.status(201).json({
       id: report.id,

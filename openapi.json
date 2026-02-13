@@ -76,6 +76,12 @@
             "description": "Decentralized Identifier (DID)",
             "example": "did:key:z6Mkm..."
           },
+          "username": {
+            "type": "string",
+            "nullable": true,
+            "description": "Unique username (optional)",
+            "example": "alice"
+          },
           "publicKey": {
             "type": "string",
             "description": "Base64-encoded Ed25519 public key",
@@ -109,6 +115,11 @@
             "type": "string",
             "example": "did:key:z6Mkm..."
           },
+          "username": {
+            "type": "string",
+            "nullable": true,
+            "example": "alice"
+          },
           "publicKey": {
             "type": "string",
             "example": "base64EncodedPublicKey..."
@@ -138,6 +149,11 @@
             "type": "string",
             "description": "Base64-encoded Ed25519 public key (32 bytes)",
             "example": "base64EncodedPublicKey..."
+          },
+          "username": {
+            "type": "string",
+            "description": "Optional username (3-30 alphanumeric characters)",
+            "example": "alice"
           }
         }
       },
@@ -153,6 +169,11 @@
           "did": {
             "type": "string",
             "example": "did:key:z6Mkm..."
+          },
+          "username": {
+            "type": "string",
+            "nullable": true,
+            "example": "alice"
           },
           "publicKey": {
             "type": "string",

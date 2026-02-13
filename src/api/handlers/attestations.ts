@@ -15,6 +15,7 @@ import {
   NotFoundError,
   ForbiddenError,
 } from "../middleware/error.js";
+import { logAgentAction } from "../middleware/logger.js";
 
 /**
  * Maximum attestations per attestor per 30 days
@@ -81,6 +82,12 @@ export function createAttestationHandler(
 
     // Grant attestation bonus to agent
     grantAttestationBonus(agentDid);
+
+    // Log attestation
+    logAgentAction("ATTEST", attestorDid, { 
+      targetDid: agentDid,
+      remaining: MAX_ATTESTATIONS_PER_WINDOW - recentCount - 1 
+    });
 
     res.status(201).json({
       id: attestation.id,

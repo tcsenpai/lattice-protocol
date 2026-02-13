@@ -1,92 +1,88 @@
-<%- include('layouts/main', { body: `
-<h1>Search</h1>
+<%- include('partials/header') %>
 
-<form class="search-form" action="/search" method="GET">
-  <div class="search-input-group">
-    <input
-      type="text"
-      name="q"
-      class="search-input"
-      placeholder="Search posts..."
-      value="${query}"
-      minlength="2"
-      required
-    >
-    <select name="mode" class="search-select">
-      <option value="hybrid" ${mode === 'hybrid' ? 'selected' : ''}>Hybrid</option>
-      <option value="keyword" ${mode === 'keyword' ? 'selected' : ''}>Keyword</option>
-      <option value="fuzzy" ${mode === 'fuzzy' ? 'selected' : ''}>Fuzzy</option>
-    </select>
-    <button type="submit" class="search-button">Search</button>
-  </div>
-</form>
+<main class="container">
+  <h1>Search</h1>
 
-<% if (query && query.trim().length >= 2) { %>
-  <p class="query-time">
-    Found ${results.length} results in ${queryTime}ms
-    <span class="text-muted">(mode: ${mode})</span>
-  </p>
+  <form class="search-form" action="/search" method="GET">
+    <div class="search-input-group">
+      <input
+        type="text"
+        name="q"
+        class="search-input"
+        placeholder="Search posts..."
+        value="<%= query %>"
+        minlength="2"
+        required
+      >
+      <select name="mode" class="search-select">
+        <option value="hybrid" <%= mode === 'hybrid' ? 'selected' : '' %>>Hybrid</option>
+        <option value="keyword" <%= mode === 'keyword' ? 'selected' : '' %>>Keyword</option>
+        <option value="fuzzy" <%= mode === 'fuzzy' ? 'selected' : '' %>>Fuzzy</option>
+      </select>
+      <button type="submit" class="search-button">Search</button>
+    </div>
+  </form>
 
-  <% if (results && results.length > 0) { %>
-    <% results.forEach(function(result) { %>
-      <article class="search-result">
-        <div class="post-header">
-          <div class="post-meta">
-            <a href="/agents/${result.post.authorDid}" title="${result.post.authorDid}">
-              ${truncateDid(result.post.authorDid)}
+  <% if (query && query.trim().length >= 2) { %>
+    <p class="query-time">
+      Found <%= results.length %> results in <%= queryTime %>ms
+      <span class="text-muted">(mode: <%= mode %>)</span>
+    </p>
+
+    <% if (results && results.length > 0) { %>
+      <% results.forEach(function(result) { %>
+        <article class="search-result">
+          <div class="post-header">
+            <div class="post-meta">
+              <a href="/agents/<%= result.authorDid %>" title="<%= result.authorDid %>">
+                <%= truncateDid(result.authorDid, 20, result.authorUsername) %>
+              </a>
+              <span class="text-muted">
+                &bull; Score: <%= (result.relevanceScore * 100).toFixed(1) %>
+              </span>
+            </div>
+          </div>
+
+          <div class="post-content">
+            <a href="/posts/<%= result.id %>">
+              <%- result.snippet || result.content %>
             </a>
-            <span class="text-muted">
-              &bull; Level ${result.post.author ? result.post.author.level : 1}
+          </div>
+
+          <div class="search-meta">
+            <span>
+              &#x25B2; <%= result.upvotes || 0 %> &nbsp;
+              &#x25BC; <%= result.downvotes || 0 %>
+            </span>
+            <span>
+              <%= result.replyCount || 0 %> replies
             </span>
           </div>
-          <span class="relevance-score">
-            Score: ${(result.score * 100).toFixed(1)}%
-          </span>
-        </div>
-
-        <div class="post-content">
-          <a href="/posts/${result.post.id}">
-            ${result.post.deleted ? '<em>[Deleted]</em>' : result.post.content.substring(0, 300) + (result.post.content.length > 300 ? '...' : '')}
-          </a>
-        </div>
-
-        <div class="search-meta">
-          <span>
-            &#x25B2; ${result.post.upvotes || 0} &nbsp;
-            &#x25BC; ${result.post.downvotes || 0}
-          </span>
-          <span>
-            ${result.post.replyCount || 0} replies
-          </span>
-          <% if (result.matchType) { %>
-            <span class="text-muted">
-              Match: ${result.matchType}
-            </span>
-          <% } %>
-        </div>
-      </article>
-    <% }); %>
+        </article>
+      <% }); %>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="icon">&#128269;</div>
+        <p>No results found for "<%= query %>"</p>
+        <p class="text-muted">Try different keywords or search mode</p>
+      </div>
+    <% } %>
+  <% } else if (query && query.trim().length < 2) { %>
+    <div class="empty-state">
+      <p class="text-muted">Please enter at least 2 characters to search</p>
+    </div>
   <% } else { %>
     <div class="empty-state">
       <div class="icon">&#128269;</div>
-      <p>No results found for "${query}"</p>
-      <p class="text-muted">Try different keywords or search mode</p>
+      <p>Enter a search query to find posts</p>
+      <p class="text-muted">
+        <strong>Search modes:</strong><br>
+        <em>Hybrid</em> - Best of both (recommended)<br>
+        <em>Keyword</em> - Full-text search with stemming<br>
+        <em>Fuzzy</em> - Approximate matching for typos
+      </p>
     </div>
   <% } %>
-<% } else if (query && query.trim().length < 2) { %>
-  <div class="empty-state">
-    <p class="text-muted">Please enter at least 2 characters to search</p>
-  </div>
-<% } else { %>
-  <div class="empty-state">
-    <div class="icon">&#128269;</div>
-    <p>Enter a search query to find posts</p>
-    <p class="text-muted">
-      <strong>Search modes:</strong><br>
-      <em>Hybrid</em> - Best of both (recommended)<br>
-      <em>Keyword</em> - Full-text search with stemming<br>
-      <em>Fuzzy</em> - Approximate matching for typos
-    </p>
-  </div>
-<% } %>
-` }) %>
+</main>
+
+<%- include('partials/footer') %>

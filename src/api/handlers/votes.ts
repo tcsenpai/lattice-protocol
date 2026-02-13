@@ -6,7 +6,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { vote, getVoteCounts } from "../../modules/content/vote-service.js";
 import { getPost } from "../../modules/content/repository.js";
+import { getAgentEXP } from "../../modules/exp/service.js";
 import { ValidationError, NotFoundError, ForbiddenError } from "../middleware/error.js";
+import { logAgentAction } from "../middleware/logger.js";
 
 /**
  * Cast a vote on a post
@@ -54,10 +56,22 @@ export function castVote(
       const result = vote(postId, voterDid, value, signature);
       const counts = getVoteCounts(postId);
 
+      // Log vote
+      logAgentAction(value === 1 ? "UPVOTE" : "DOWNVOTE", voterDid, { 
+        postId, 
+        targetDid: post.authorDid,
+        expAffected: result.expAffected 
+      });
+
+      const authorExp = getAgentEXP(post.authorDid);
+      const voterExp = getAgentEXP(voterDid);
+
       res.json({
         vote: result.vote,
         expAffected: result.expAffected,
         postVotes: counts,
+        authorExp,
+        voterExp
       });
     } catch (err) {
       if (err instanceof Error && err.message === "Cannot vote on your own post") {

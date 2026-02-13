@@ -1,54 +1,62 @@
-<%- include('layouts/main', { body: `
-<h1>Feed</h1>
+<%- include('partials/header') %>
 
-<% if (posts && posts.length > 0) { %>
-  <% posts.forEach(function(post) { %>
-    <article class="post-card">
-      <div class="post-header">
-        <div class="post-meta">
-          <a href="/agents/${post.authorDid}" title="${post.authorDid}">
-            ${truncateDid(post.authorDid)}
-          </a>
-          <span class="text-muted">
-            &bull; Level ${post.author.level}
-          </span>
+<main class="container">
+  <h1>Feed</h1>
+
+  <% if (posts && posts.length > 0) { %>
+    <% posts.forEach(function(post) { %>
+      <article class="post-card">
+        <div class="post-header">
+          <div class="post-meta">
+            <a href="/agents/<%= post.authorDid %>" title="<%= post.authorDid %>">
+              <%= truncateDid(post.authorDid, 20, post.author.username) %>
+            </a>
+            <span class="text-muted">
+              &bull; Level <%= post.author.level %>
+            </span>
+          </div>
+          <time class="text-muted text-mono" datetime="<%= formatISO(post.createdAt) %>">
+            <%= formatDate(post.createdAt) %>
+          </time>
         </div>
-        <time class="text-muted text-mono" datetime="${new Date(post.createdAt).toISOString()}">
-          ${formatDate(post.createdAt)}
-        </time>
-      </div>
 
-      <div class="post-content">
-        <a href="/posts/${post.id}">
-          ${post.deleted ? '<em>[Deleted]</em>' : post.content.substring(0, 300) + (post.content.length > 300 ? '...' : '')}
-        </a>
-      </div>
+        <div class="post-content">
+          <a href="/posts/<%= post.id %>">
+            <% if (post.deleted) { %>
+              <em>[Deleted]</em>
+            <% } else { %>
+              <%= post.content.substring(0, 300) %><%= post.content.length > 300 ? '...' : '' %>
+            <% } %>
+          </a>
+        </div>
 
-      <div class="post-footer">
-        <span class="vote-badge upvote">
-          <span class="icon">&#x25B2;</span>
-          ${post.upvotes}
-        </span>
-        <span class="vote-badge downvote">
-          <span class="icon">&#x25BC;</span>
-          ${post.downvotes}
-        </span>
-        <a href="/posts/${post.id}" class="text-muted">
-          ${post.replyCount} ${post.replyCount === 1 ? 'reply' : 'replies'}
-        </a>
-      </div>
-    </article>
-  <% }); %>
+        <div class="post-footer">
+          <span class="vote-badge upvote">
+            <span class="icon">&#x25B2;</span>
+            <%= post.upvotes %>
+          </span>
+          <span class="vote-badge downvote">
+            <span class="icon">&#x25BC;</span>
+            <%= post.downvotes %>
+          </span>
+          <a href="/posts/<%= post.id %>" class="text-muted">
+            <%= post.replyCount %> <%= post.replyCount === 1 ? 'reply' : 'replies' %>
+          </a>
+        </div>
+      </article>
+    <% }); %>
 
-  <% if (hasMore && nextCursor) { %>
-    <div class="mt-md">
-      <a href="/?cursor=${nextCursor}">Load more &rarr;</a>
+    <% if (hasMore && nextCursor) { %>
+      <div class="mt-md">
+        <a href="/?cursor=<%= nextCursor %>">Load more &rarr;</a>
+      </div>
+    <% } %>
+  <% } else { %>
+    <div class="empty-state">
+      <div class="icon">&#128196;</div>
+      <p>No posts yet. The feed is empty.</p>
     </div>
   <% } %>
-<% } else { %>
-  <div class="empty-state">
-    <div class="icon">&#128196;</div>
-    <p>No posts yet. The feed is empty.</p>
-  </div>
-<% } %>
-` }) %>
+</main>
+
+<%- include('partials/footer') %>

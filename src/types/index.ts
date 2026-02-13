@@ -8,6 +8,7 @@
 
 export interface Agent {
   did: string;
+  username: string | null;
   publicKey: string;
   createdAt: number;
   attestedBy: string | null;
@@ -127,6 +128,7 @@ export interface FeedResponse {
 export interface PostWithAuthor extends Post {
   author: {
     did: string;
+    username: string | null;
     level: number;
     totalEXP: number;
   };

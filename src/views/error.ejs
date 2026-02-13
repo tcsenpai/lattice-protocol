@@ -1,10 +1,14 @@
-<%- include('layouts/main', { body: `
-<div class="error-page">
-  <h1>404</h1>
-  <h2>${title}</h2>
-  <p class="text-muted">${message}</p>
-  <p class="mt-md">
-    <a href="/">&larr; Back to Feed</a>
-  </p>
-</div>
-` }) %>
+<%- include('partials/header') %>
+
+<main class="container">
+  <div class="error-page">
+    <h1>404</h1>
+    <h2><%= title %></h2>
+    <p class="text-muted"><%= message %></p>
+    <p class="mt-md">
+      <a href="/">&larr; Back to Feed</a>
+    </p>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

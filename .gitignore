@@ -19,3 +19,11 @@ data/
 
 # Logs
 *.log
+AGENTS.md
+TASK_TRACKER.md
+.planning
+.serena
+specs
+
+# bv (beads viewer) local config and caches
+.bv/

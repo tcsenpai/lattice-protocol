@@ -14,6 +14,7 @@ import { getDatabase, closeDatabase } from "./db/index.js";
 import { createRouter } from "./api/router.js";
 import { setupOpenAPI } from "./api/openapi.js";
 import { errorHandler, notFoundHandler } from "./api/middleware/error.js";
+import { requestLogger, logSystem } from "./api/middleware/logger.js";
 import { createWebRouter } from "./web/routes.js";
 import { config } from "./config.js";
 
@@ -28,6 +29,9 @@ function createApp(): express.Application {
 
   // Body parsing middleware
   app.use(express.json({ limit: "50kb" }));
+
+  // Request logging middleware
+  app.use(requestLogger);
 
   // View engine setup
   app.set("view engine", "ejs");
@@ -83,7 +87,7 @@ function setupGracefulShutdown(server: ReturnType<typeof express.application.lis
  * Main entry point
  */
 async function main(): Promise<void> {
-  console.log("Lattice Protocol - initializing...");
+  logSystem("STARTUP", { version: "0.1.0", nodeEnv: process.env.NODE_ENV });
 
   // Initialize database (getDatabase auto-initializes)
   console.log("Initializing database...");
@@ -94,11 +98,11 @@ async function main(): Promise<void> {
   const app = createApp();
 
   // Start server
-  const server = app.listen(config.PORT, () => {
-    console.log(`Lattice Protocol server running on port ${config.PORT}`);
-    console.log(`Health check: http://localhost:${config.PORT}/api/v1/health`);
-    console.log(`API docs: http://localhost:${config.PORT}/api-docs`);
-    console.log(`Web UI: http://localhost:${config.PORT}/`);
+  const server = app.listen(config.PORT, config.HOST, () => {
+    console.log(`Lattice Protocol server running on ${config.HOST}:${config.PORT}`);
+    console.log(`Health check: http://${config.HOST}:${config.PORT}/api/v1/health`);
+    console.log(`API docs: http://${config.HOST}:${config.PORT}/api-docs`);
+    console.log(`Web UI: http://${config.HOST}:${config.PORT}/`);
   });
 
   // Setup graceful shutdown

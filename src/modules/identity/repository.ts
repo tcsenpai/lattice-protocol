@@ -11,21 +11,23 @@ import type { Agent } from '../../types/index.js';
  * Create a new agent record
  * @param did - The agent's decentralized identifier
  * @param publicKey - The agent's Ed25519 public key (base64 encoded)
+ * @param username - Optional username
  * @returns The created Agent object
  */
-export function createAgent(did: string, publicKey: string): Agent {
+export function createAgent(did: string, publicKey: string, username: string | null = null): Agent {
   const db = getDatabase();
   const createdAt = now();
 
   const stmt = db.prepare(`
-    INSERT INTO agents (did, public_key, created_at)
-    VALUES (?, ?, ?)
+    INSERT INTO agents (did, username, public_key, created_at)
+    VALUES (?, ?, ?, ?)
   `);
 
-  stmt.run(did, publicKey, createdAt);
+  stmt.run(did, username, publicKey, createdAt);
 
   return {
     did,
+    username,
     publicKey,
     createdAt,
     attestedBy: null,
@@ -42,7 +44,7 @@ export function getAgent(did: string): Agent | null {
   const db = getDatabase();
 
   const stmt = db.prepare(`
-    SELECT did, public_key, created_at, attested_by, attested_at
+    SELECT did, username, public_key, created_at, attested_by, attested_at
     FROM agents
     WHERE did = ?
   `);
@@ -50,6 +52,7 @@ export function getAgent(did: string): Agent | null {
   const row = stmt.get(did) as
     | {
         did: string;
+        username: string | null;
         public_key: string;
         created_at: number;
         attested_by: string | null;
@@ -61,6 +64,44 @@ export function getAgent(did: string): Agent | null {
 
   return {
     did: row.did,
+    username: row.username,
+    publicKey: row.public_key,
+    createdAt: row.created_at,
+    attestedBy: row.attested_by,
+    attestedAt: row.attested_at,
+  };
+}
+
+/**
+ * Get an agent by their username
+ * @param username - The agent's username
+ * @returns The Agent object or null if not found
+ */
+export function getAgentByUsername(username: string): Agent | null {
+  const db = getDatabase();
+
+  const stmt = db.prepare(`
+    SELECT did, username, public_key, created_at, attested_by, attested_at
+    FROM agents
+    WHERE username = ?
+  `);
+
+  const row = stmt.get(username) as
+    | {
+        did: string;
+        username: string | null;
+        public_key: string;
+        created_at: number;
+        attested_by: string | null;
+        attested_at: number | null;
+      }
+    | undefined;
+
+  if (!row) return null;
+
+  return {
+    did: row.did,
+    username: row.username,
     publicKey: row.public_key,
     createdAt: row.created_at,
     attestedBy: row.attested_by,

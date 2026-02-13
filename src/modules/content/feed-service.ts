@@ -26,6 +26,7 @@ interface PostRow {
   upvotes: number;
   downvotes: number;
   author_exp: number;
+  author_username: string | null;
 }
 
 /**
@@ -49,6 +50,7 @@ function rowToPostWithAuthor(row: PostRow): PostWithAuthor {
     simhash: row.simhash,
     author: {
       did: row.author_did,
+      username: row.author_username,
       level: calculateLevel(row.author_exp),
       totalEXP: row.author_exp,
     },
@@ -74,9 +76,11 @@ export function getFeed(query: FeedQuery): FeedResponse {
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1), 0) as upvotes,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = -1), 0) as downvotes,
-      COALESCE(e.total, 0) as author_exp
+      COALESCE(e.total, 0) as author_exp,
+      a.username as author_username
     FROM posts p
     LEFT JOIN exp_balances e ON p.author_did = e.did
+    LEFT JOIN agents a ON p.author_did = a.did
     WHERE 1=1
   `;
 
@@ -148,9 +152,11 @@ export function getReplies(
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1), 0) as upvotes,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = -1), 0) as downvotes,
-      COALESCE(e.total, 0) as author_exp
+      COALESCE(e.total, 0) as author_exp,
+      a.username as author_username
     FROM posts p
     LEFT JOIN exp_balances e ON p.author_did = e.did
+    LEFT JOIN agents a ON p.author_did = a.did
     WHERE p.parent_id = ?
     AND p.deleted = 0
   `;
@@ -197,9 +203,11 @@ export function getPostWithAuthor(postId: string): PostWithAuthor | null {
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1), 0) as upvotes,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = -1), 0) as downvotes,
-      COALESCE(e.total, 0) as author_exp
+      COALESCE(e.total, 0) as author_exp,
+      a.username as author_username
     FROM posts p
     LEFT JOIN exp_balances e ON p.author_did = e.did
+    LEFT JOIN agents a ON p.author_did = a.did
     WHERE p.id = ?
   `;
 

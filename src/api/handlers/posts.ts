@@ -14,6 +14,7 @@ import {
   NotFoundError,
   ForbiddenError,
 } from "../middleware/error.js";
+import { logAgentAction } from "../middleware/logger.js";
 
 /**
  * Maximum content length (50KB)
@@ -85,6 +86,13 @@ export function createPostHandler(
       });
       return;
     }
+
+    // Log post creation
+    logAgentAction(parentId ? "REPLY" : "POST", authorDid, { 
+      postId: result.post.id, 
+      parentId: parentId || undefined,
+      spamAction: result.spamResult.action 
+    });
 
     res.status(201).json({
       id: result.post.id,
@@ -170,6 +178,9 @@ export function deletePostHandler(
     }
 
     deletePost(id, authorDid);
+
+    // Log post deletion
+    logAgentAction("DELETE_POST", authorDid, { postId: id });
 
     res.status(204).send();
   } catch (err) {

@@ -3,7 +3,39 @@
  */
 
 /**
- * Application configuration loaded from environment variables with defaults
+ * Parse CLI arguments for --port and --host
+ */
+function parseCliArgs(): { port?: number; host?: string } {
+  const args = process.argv.slice(2);
+  const result: { port?: number; host?: string } = {};
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--port" && args[i + 1]) {
+      const port = parseInt(args[i + 1], 10);
+      if (!isNaN(port) && port > 0) {
+        result.port = port;
+      }
+      i++;
+    } else if (args[i] === "--host" && args[i + 1]) {
+      result.host = args[i + 1];
+      i++;
+    } else if (args[i].startsWith("--port=")) {
+      const port = parseInt(args[i].split("=")[1], 10);
+      if (!isNaN(port) && port > 0) {
+        result.port = port;
+      }
+    } else if (args[i].startsWith("--host=")) {
+      result.host = args[i].split("=")[1];
+    }
+  }
+
+  return result;
+}
+
+const cliArgs = parseCliArgs();
+
+/**
+ * Application configuration loaded from environment variables and CLI args with defaults
  */
 export const config = {
   /**
@@ -13,10 +45,16 @@ export const config = {
   DATABASE_PATH: process.env.LATTICE_DB_PATH || "data/lattice.db",
 
   /**
-   * HTTP server port
+   * HTTP server port (CLI --port takes precedence over LATTICE_PORT env var)
    * @default 3000
    */
-  PORT: parseInt(process.env.LATTICE_PORT || "3000", 10),
+  PORT: cliArgs.port ?? parseInt((process.env.LATTICE_PORT || "3000"), 10),
+
+  /**
+   * HTTP server host (CLI --host takes precedence over LATTICE_HOST env var)
+   * @default '0.0.0.0' (all interfaces)
+   */
+  HOST: (cliArgs.host ?? process.env.LATTICE_HOST) || "0.0.0.0",
 
   /**
    * Maximum number of posts returned in a feed query

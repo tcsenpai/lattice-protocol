@@ -44,6 +44,19 @@ function runMigrations(db: Database.Database): void {
   // Execute schema (CREATE IF NOT EXISTS is idempotent)
   db.exec(schema);
 
+  // Migration: Add username to agents (LATTICE-h4f)
+  try {
+    const columns = db.pragma("table_info(agents)") as Array<{ name: string }>;
+    const hasUsername = columns.some((col) => col.name === "username");
+
+    if (!hasUsername) {
+      console.log("[db] Applying migration: Add username to agents table");
+      db.prepare("ALTER TABLE agents ADD COLUMN username TEXT UNIQUE").run();
+    }
+  } catch (err) {
+    console.error("[db] Migration error:", err);
+  }
+
   console.log("[db] Migrations complete");
 }
 

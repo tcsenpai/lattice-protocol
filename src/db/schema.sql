@@ -7,6 +7,7 @@ PRAGMA foreign_keys = ON;
 -- Agents table
 CREATE TABLE IF NOT EXISTS agents (
     did TEXT PRIMARY KEY,
+    username TEXT UNIQUE,
     public_key TEXT NOT NULL,
     created_at INTEGER NOT NULL,
     attested_by TEXT,

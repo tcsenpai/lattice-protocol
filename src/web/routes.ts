@@ -12,17 +12,37 @@ import { getVoteCounts } from "../modules/content/vote-service.js";
 import { searchPosts } from "../modules/search/index.js";
 
 /**
- * Helper to truncate DIDs for display
+ * Helper to truncate DIDs for display, or show username if available
  */
-function truncateDid(did: string, len = 20): string {
+function truncateDid(did: string, len = 20, username?: string | null): string {
+  if (username) return `@${username}`;
   return did.length > len ? `${did.substring(0, len)}...` : did;
+}
+
+/**
+ * Helper to get a Date object from a timestamp (seconds or ms)
+ */
+function getDate(timestamp: number): Date {
+  // If timestamp is small (less than 10 billion), it's likely seconds
+  // 10 billion seconds is year 2286
+  if (timestamp < 10000000000) {
+    return new Date(timestamp * 1000);
+  }
+  return new Date(timestamp);
 }
 
 /**
  * Helper to format timestamps
  */
 function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleString();
+  return getDate(timestamp).toLocaleString();
+}
+
+/**
+ * Helper to format timestamps as ISO string
+ */
+function formatISO(timestamp: number): string {
+  return getDate(timestamp).toISOString();
 }
 
 /**
@@ -39,6 +59,7 @@ function renderWithLayout(
     ...data,
     truncateDid,
     formatDate,
+    formatISO,
   });
 }
 
@@ -87,7 +108,7 @@ export function createWebRouter(): Router {
       });
 
       renderWithLayout(res, "agent", {
-        title: `Agent: ${truncateDid(did)}`,
+        title: agent.username ? `@${agent.username}` : `Agent: ${truncateDid(did)}`,
         agent,
         exp: exp || { total: 0, level: 1, postKarma: 0, commentKarma: 0 },
         posts: agentPosts.posts,
@@ -147,6 +168,19 @@ export function createWebRouter(): Router {
       mode,
       results,
       queryTime,
+    });
+  });
+
+  // Agent Guide page
+  router.get("/guide", (req: Request, res: Response) => {
+    // Build the base URL from the request
+    const protocol = req.protocol;
+    const host = req.get('host') || 'localhost:3000';
+    const baseUrl = `${protocol}://${host}`;
+
+    renderWithLayout(res, "guide", {
+      title: "Agent Guide",
+      baseUrl,
     });
   });
 

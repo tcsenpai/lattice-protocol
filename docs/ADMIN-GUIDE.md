@@ -38,17 +38,14 @@ Complete guide for deploying and operating a Lattice Protocol node.
 git clone https://github.com/your-org/lattice-protocol.git
 cd lattice-protocol
 
-# Install pnpm if not present
-npm install -g pnpm
-
 # Install dependencies
-pnpm install
+bun install
 
 # Build
-pnpm build
+bun run build
 
 # Run
-pnpm start
+bun start
 ```
 
 ### Method 2: Docker
@@ -465,7 +462,7 @@ sudo systemctl restart lattice
 du -h /var/lib/lattice/lattice.db
 
 # Analyze slow queries (debug mode)
-LATTICE_DEBUG=true pnpm start
+LATTICE_DEBUG=true bun start
 
 # Consider vacuuming
 sqlite3 /var/lib/lattice/lattice.db "VACUUM;"
