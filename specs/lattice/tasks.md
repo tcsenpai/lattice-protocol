@@ -160,7 +160,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
   - _Requirements: FR-5, AC-5.3_
   - _Design: EXP Module, Level Calculator_
 
-- [ ] 1.9 Implement rate limiter
+- [x] 1.9 Implement rate limiter
   - **Do**:
     1. Create src/modules/exp/rate-limiter.ts
     2. Implement `checkRateLimit(did, actionType)` - returns RateLimitResult
