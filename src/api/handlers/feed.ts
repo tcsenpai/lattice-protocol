@@ -6,7 +6,7 @@
 
 import type { Request, Response, NextFunction } from "express";
 import { getFeed, getReplies } from "../../modules/content/feed-service.js";
-import { ValidationError } from "../middleware/error.js";
+import { ValidationError, AuthError } from "../middleware/error.js";
 import type { FeedQuery } from "../../types/index.js";
 
 /**
@@ -23,6 +23,8 @@ const DEFAULT_LIMIT = 20;
  * - cursor: Pagination cursor (last post ID from previous page)
  * - limit: Number of posts to return (max 50)
  * - authorDid: Filter by author DID
+ * - following: "true" to show posts from followed agents (requires auth)
+ * - topic: Filter by topic/hashtag
  */
 export function getFeedHandler(
   req: Request,
@@ -30,7 +32,7 @@ export function getFeedHandler(
   next: NextFunction
 ): void {
   try {
-    const { cursor, limit: limitParam, authorDid } = req.query;
+    const { cursor, limit: limitParam, authorDid, following, topic } = req.query;
 
     // Parse limit
     let limit = DEFAULT_LIMIT;
@@ -49,7 +51,16 @@ export function getFeedHandler(
       cursor: (cursor as string | undefined) || null,
       authorDid: (authorDid as string | undefined) || null,
       includeDeleted: false,
+      topic: (topic as string | undefined) || undefined,
     };
+
+    // Handle "My Feed" (followed agents)
+    if (following === "true") {
+      if (!req.authenticatedDid) {
+        throw new AuthError("Authentication required for following feed");
+      }
+      query.followedBy = req.authenticatedDid;
+    }
 
     const result = getFeed(query);
 

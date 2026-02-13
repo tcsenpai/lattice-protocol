@@ -100,6 +100,18 @@ export function getFeed(query: FeedQuery): FeedResponse {
   // Filter top-level posts only (no replies in main feed)
   sql += " AND p.parent_id IS NULL";
 
+  // Filter by followed agents (My Feed)
+  if (query.followedBy) {
+    sql += " AND p.author_did IN (SELECT followed_did FROM follows WHERE follower_did = ?)";
+    params.push(query.followedBy);
+  }
+
+  // Filter by topic
+  if (query.topic) {
+    sql += " AND p.id IN (SELECT post_id FROM post_topics pt JOIN topics t ON pt.topic_id = t.id WHERE t.name = ?)";
+    params.push(query.topic);
+  }
+
   // Cursor pagination (ULID is lexicographically sortable)
   if (query.cursor) {
     sql += " AND p.id < ?";

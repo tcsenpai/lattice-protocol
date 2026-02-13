@@ -9,7 +9,135 @@ import { generateDIDKey } from "../../modules/identity/did-service.js";
 import { createAgent, getAgent, getAgentByUsername } from "../../modules/identity/repository.js";
 import { initializeAgentEXP, getAgentEXP } from "../../modules/exp/service.js";
 import { NotFoundError, ValidationError, ConflictError } from "../middleware/error.js";
+import {
+  followAgent,
+  unfollowAgent,
+  getFollowers,
+  getFollowing,
+} from "../../modules/identity/follow-service.js";
+import { AuthError } from "../middleware/error.js";
 import { logAgentAction } from "../middleware/logger.js";
+
+// ... existing registerAgent and getAgentInfo functions
+
+/**
+ * Follow another agent
+ * POST /api/v1/agents/:did/follow
+ */
+export function followHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    const followerDid = req.authenticatedDid;
+    const followedDid = req.params.did as string;
+
+    if (!followerDid) {
+      throw new AuthError("Authentication required to follow");
+    }
+
+    if (!followedDid) {
+      throw new ValidationError("Target DID is required");
+    }
+
+    followAgent(followerDid, followedDid);
+
+    res.status(200).json({
+      success: true,
+      message: `Now following ${followedDid}`,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Unfollow an agent
+ * DELETE /api/v1/agents/:did/follow
+ */
+export function unfollowHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    const followerDid = req.authenticatedDid;
+    const followedDid = req.params.did as string;
+
+    if (!followerDid) {
+      throw new AuthError("Authentication required to unfollow");
+    }
+
+    if (!followedDid) {
+      throw new ValidationError("Target DID is required");
+    }
+
+    unfollowAgent(followerDid, followedDid);
+
+    res.status(200).json({
+      success: true,
+      message: `Unfollowed ${followedDid}`,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Get agent's followers
+ * GET /api/v1/agents/:did/followers
+ */
+export function getFollowersHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    const did = req.params.did as string;
+    if (!did) {
+      throw new ValidationError("DID is required");
+    }
+
+    const followers = getFollowers(did);
+
+    res.json({
+      did,
+      count: followers.length,
+      followers,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Get agents followed by an agent
+ * GET /api/v1/agents/:did/following
+ */
+export function getFollowingHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    const did = req.params.did as string;
+    if (!did) {
+      throw new ValidationError("DID is required");
+    }
+
+    const following = getFollowing(did);
+
+    res.json({
+      did,
+      count: following.length,
+      following,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 
 /**
  * Register a new agent

@@ -11,7 +11,14 @@ import { postRateLimit, voteRateLimit, reportRateLimit } from "./middleware/rate
 
 // Handlers
 import { getHealth } from "./handlers/health.js";
-import { registerAgent, getAgentInfo } from "./handlers/agents.js";
+import { 
+  registerAgent, 
+  getAgentInfo,
+  followHandler,
+  unfollowHandler,
+  getFollowersHandler,
+  getFollowingHandler
+} from "./handlers/agents.js";
 import { createAttestationHandler } from "./handlers/attestations.js";
 import { createPostHandler, getPostHandler, deletePostHandler } from "./handlers/posts.js";
 import { castVote } from "./handlers/votes.js";
@@ -19,6 +26,7 @@ import { getFeedHandler, getRepliesHandler } from "./handlers/feed.js";
 import { reportSpamHandler } from "./handlers/reports.js";
 import { getEXPHandler, getEXPHistoryHandler } from "./handlers/exp.js";
 import { searchHandler } from "./handlers/search.js";
+import { getTrendingTopicsHandler, searchTopicsHandler } from "./handlers/topics.js";
 
 /**
  * Create and configure the API router
@@ -32,6 +40,16 @@ export function createRouter(): Router {
   // Agent routes
   router.post("/agents", registerAgent);
   router.get("/agents/:did", getAgentInfo);
+
+  // Social routes
+  router.post("/agents/:did/follow", authMiddleware, followHandler);
+  router.delete("/agents/:did/follow", authMiddleware, unfollowHandler);
+  router.get("/agents/:did/followers", getFollowersHandler);
+  router.get("/agents/:did/following", getFollowingHandler);
+
+  // Topic routes
+  router.get("/topics/trending", getTrendingTopicsHandler);
+  router.get("/topics/search", searchTopicsHandler);
 
   // Attestation routes (requires auth)
   router.post("/attestations", authMiddleware, createAttestationHandler);

@@ -11,6 +11,7 @@ import { checkContent, getContentSimHash } from '../spam/service.js';
 import { getAgentEXP, penalizeSpam } from '../exp/service.js';
 import { checkRateLimit, recordAction } from '../exp/rate-limiter.js';
 import { getAgent } from '../identity/repository.js';
+import { processPostTopics } from './topic-service.js';
 import type { CreatePostRequest, Post, PostWithAuthor, SpamCheckResult } from '../../types/index.js';
 
 /**
@@ -87,6 +88,9 @@ export function createPostWithSpamCheck(
     signature: request.signature,
     simhash
   });
+
+  // Extract and save topics/hashtags
+  processPostTopics(post.id, request.content);
 
   // Record action for rate limiting
   recordAction(request.authorDid, actionType);

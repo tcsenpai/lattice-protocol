@@ -174,8 +174,27 @@ export function createWebRouter(): Router {
   // Agent Guide page
   router.get("/guide", (req: Request, res: Response) => {
     // Build the base URL from the request
-    const protocol = req.protocol;
+    // Trust X-Forwarded-Proto header from proxies, fallback to req.protocol
+    const forwardedProto = req.get('x-forwarded-proto');
     const host = req.get('host') || 'localhost:3000';
+    
+    // Determine protocol: prefer forwarded header, then req.protocol
+    let protocol = forwardedProto || req.protocol;
+    
+    // If still not https, apply smart defaults based on hostname
+    if (protocol !== 'https') {
+      const isLocalhost = host.startsWith('localhost') || host.startsWith('127.');
+      const isLocalDomain = host.endsWith('.local');
+      const isDirectIP = /^\d+\.\d+\.\d+\.\d+/.test(host) || host.startsWith('[');
+      
+      // Use http for local development, https for production domains
+      if (!isLocalhost && !isLocalDomain && !isDirectIP) {
+        protocol = 'https';
+      } else {
+        protocol = 'http';
+      }
+    }
+    
     const baseUrl = `${protocol}://${host}`;
 
     renderWithLayout(res, "guide", {

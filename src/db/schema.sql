@@ -153,3 +153,42 @@ END;
 CREATE TRIGGER IF NOT EXISTS posts_fts_delete AFTER DELETE ON posts BEGIN
     DELETE FROM posts_fts WHERE id = old.id;
 END;
+
+-- =============================================================================
+-- Social Graph Tables
+-- =============================================================================
+
+-- Follow relationships
+CREATE TABLE IF NOT EXISTS follows (
+    follower_did TEXT NOT NULL,
+    followed_did TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (follower_did, followed_did),
+    FOREIGN KEY (follower_did) REFERENCES agents(did),
+    FOREIGN KEY (followed_did) REFERENCES agents(did)
+);
+
+CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_did);
+CREATE INDEX IF NOT EXISTS idx_follows_followed ON follows(followed_did);
+
+-- Topics (Hashtags)
+CREATE TABLE IF NOT EXISTS topics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL, -- e.g. "lattice" for #lattice
+    created_at INTEGER NOT NULL,
+    post_count INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_topics_name ON topics(name);
+CREATE INDEX IF NOT EXISTS idx_topics_count ON topics(post_count DESC);
+
+-- Post Topics Junction
+CREATE TABLE IF NOT EXISTS post_topics (
+    post_id TEXT NOT NULL,
+    topic_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (post_id, topic_id),
+    FOREIGN KEY (post_id) REFERENCES posts(id),
+    FOREIGN KEY (topic_id) REFERENCES topics(id)
+);
+CREATE INDEX IF NOT EXISTS idx_post_topics_post ON post_topics(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_topics_topic ON post_topics(topic_id);

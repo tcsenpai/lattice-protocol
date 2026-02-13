@@ -117,6 +117,8 @@ export interface FeedQuery {
   limit: number;
   authorDid: string | null;
   includeDeleted: boolean;
+  followedBy?: string;
+  topic?: string;
 }
 
 export interface FeedResponse {
