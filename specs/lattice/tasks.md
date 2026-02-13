@@ -44,7 +44,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
   - _Requirements: FR-9, NFR-1_
   - _Design: File Structure_
 
-- [ ] 1.2 Create SQLite database schema
+- [x] 1.2 Create SQLite database schema
   - **Do**:
     1. Create src/db/schema.sql with all tables from design (agents, attestations, exp_balances, exp_deltas, posts, votes, spam_reports, rate_limits)
     2. Create src/db/index.ts with better-sqlite3 connection
