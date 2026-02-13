@@ -78,7 +78,7 @@ Focus: Validate the idea works end-to-end. Skip tests, accept hardcoded values, 
 
 ### 1.2 Identity Module
 
-- [ ] 1.4 Implement DID service with did:key support
+- [x] 1.4 Implement DID service with did:key support
   - **Do**:
     1. Create src/modules/identity/did-service.ts
     2. Implement `generateDIDKey(publicKey)` - derives did:key from Ed25519 public key
