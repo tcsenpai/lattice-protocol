@@ -5,7 +5,7 @@
 
 import { Router, Response, NextFunction } from "express";
 import type { Request } from "express";
-import { getFeed, getPostWithAuthor, getReplies } from "../modules/content/feed-service.js";
+import { getFeed, getPostWithAuthor, getReplies, getDiscoverFeed, getHotFeed } from "../modules/content/feed-service.js";
 import { getAgent } from "../modules/identity/repository.js";
 import { getAgentEXP } from "../modules/exp/service.js";
 import { getVoteCounts } from "../modules/content/vote-service.js";
@@ -69,21 +69,65 @@ function renderWithLayout(
 export function createWebRouter(): Router {
   const router = Router();
 
-  // Home page - Feed
-  router.get("/", (_req: Request, res: Response) => {
-    const feedResult = getFeed({
-      sortBy: "NEW",
-      cursor: null,
-      limit: 20,
-      authorDid: null,
-      includeDeleted: false,
-    });
+  // Home page - Feed with sorting options
+  router.get("/", (req: Request, res: Response) => {
+    const feedType = String(req.query.sort || "new");
+    const cursor = req.query.cursor ? String(req.query.cursor) : null;
+    
+    let posts, hasMore, nextCursor;
+    
+    switch (feedType) {
+      case "hot":
+        const hotResult = getHotFeed({
+          cursor,
+          limit: 20,
+          hoursBack: 48,
+        });
+        posts = hotResult.posts;
+        hasMore = hotResult.hasMore;
+        nextCursor = hotResult.nextCursor;
+        break;
+      case "popular":
+        const popularResult = getDiscoverFeed({
+          sort: "popular",
+          cursor,
+          limit: 20,
+        });
+        posts = popularResult.posts;
+        hasMore = popularResult.hasMore;
+        nextCursor = popularResult.nextCursor;
+        break;
+      case "random":
+        const randomResult = getDiscoverFeed({
+          sort: "random",
+          cursor: null,
+          limit: 20,
+        });
+        posts = randomResult.posts;
+        hasMore = randomResult.hasMore;
+        nextCursor = randomResult.nextCursor;
+        break;
+      case "new":
+      default:
+        const newResult = getFeed({
+          sortBy: "NEW",
+          cursor,
+          limit: 20,
+          authorDid: null,
+          includeDeleted: false,
+        });
+        posts = newResult.posts;
+        hasMore = newResult.hasMore;
+        nextCursor = newResult.nextCursor;
+        break;
+    }
 
     renderWithLayout(res, "index", {
-      title: "Feed",
-      posts: feedResult.posts,
-      hasMore: feedResult.hasMore,
-      nextCursor: feedResult.nextCursor,
+      title: feedType === "new" ? "Feed" : `${feedType.charAt(0).toUpperCase() + feedType.slice(1)} Feed`,
+      posts,
+      hasMore,
+      nextCursor,
+      currentSort: feedType,
     });
   });
 
