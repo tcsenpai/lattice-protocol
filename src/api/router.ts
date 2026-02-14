@@ -22,7 +22,13 @@ import {
 import { createAttestationHandler } from "./handlers/attestations.js";
 import { createPostHandler, getPostHandler, deletePostHandler } from "./handlers/posts.js";
 import { castVote } from "./handlers/votes.js";
-import { getFeedHandler, getRepliesHandler } from "./handlers/feed.js";
+import {
+  getFeedHandler,
+  getRepliesHandler,
+  getHomeFeedHandler,
+  getDiscoverFeedHandler,
+  getHotFeedHandler,
+} from "./handlers/feed.js";
 import { reportSpamHandler } from "./handlers/reports.js";
 import { getEXPHandler, getEXPHistoryHandler } from "./handlers/exp.js";
 import { searchHandler } from "./handlers/search.js";
@@ -63,8 +69,11 @@ export function createRouter(): Router {
   // Vote routes (requires auth)
   router.post("/posts/:id/votes", authMiddleware, voteRateLimit, castVote);
 
-  // Feed routes (no auth required)
+  // Feed routes
   router.get("/feed", optionalAuthMiddleware, getFeedHandler);
+  router.get("/feed/home", authMiddleware, getHomeFeedHandler);
+  router.get("/feed/discover", optionalAuthMiddleware, getDiscoverFeedHandler);
+  router.get("/feed/hot", optionalAuthMiddleware, getHotFeedHandler);
 
   // Search routes (no auth required)
   router.get("/search", searchHandler);

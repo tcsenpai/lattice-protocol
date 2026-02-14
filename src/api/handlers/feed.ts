@@ -1,13 +1,22 @@
 /**
  * Feed Handlers
  * GET /api/v1/feed - Get paginated feed
+ * GET /api/v1/feed/home - Get home feed (followed agents)
+ * GET /api/v1/feed/discover - Get discover feed (newest/popular/random)
+ * GET /api/v1/feed/hot - Get hot/trending feed
  * GET /api/v1/posts/:id/replies - Get replies for a post
  */
 
 import type { Request, Response, NextFunction } from "express";
-import { getFeed, getReplies } from "../../modules/content/feed-service.js";
+import {
+  getFeed,
+  getReplies,
+  getHomeFeed,
+  getDiscoverFeed,
+  getHotFeed,
+} from "../../modules/content/feed-service.js";
 import { ValidationError, AuthError } from "../middleware/error.js";
-import type { FeedQuery } from "../../types/index.js";
+import type { FeedQuery, FeedSort } from "../../types/index.js";
 
 /**
  * Maximum posts per page
@@ -106,6 +115,158 @@ export function getRepliesHandler(
     }
 
     const result = getReplies(parentId, (cursor as string | undefined) || null, limit);
+
+    res.json({
+      posts: result.posts,
+      nextCursor: result.nextCursor,
+      hasMore: result.hasMore,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Get home feed - posts from followed agents only
+ * GET /api/v1/feed/home
+ *
+ * Requires authentication.
+ *
+ * Query params:
+ * - cursor: Pagination cursor
+ * - limit: Number of posts to return (max 50)
+ */
+export function getHomeFeedHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    if (!req.authenticatedDid) {
+      throw new AuthError("Authentication required for home feed");
+    }
+
+    const { cursor, limit: limitParam } = req.query;
+
+    let limit = DEFAULT_LIMIT;
+    if (limitParam !== undefined) {
+      const parsed = parseInt(limitParam as string, 10);
+      if (isNaN(parsed) || parsed < 1) {
+        throw new ValidationError("limit must be a positive integer");
+      }
+      limit = Math.min(parsed, MAX_LIMIT);
+    }
+
+    const result = getHomeFeed(
+      req.authenticatedDid,
+      (cursor as string | undefined) || null,
+      limit
+    );
+
+    res.json({
+      posts: result.posts,
+      nextCursor: result.nextCursor,
+      hasMore: result.hasMore,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Get discover feed - global posts with sorting options
+ * GET /api/v1/feed/discover
+ *
+ * Query params:
+ * - sort: "newest" (default), "popular", or "random"
+ * - cursor: Pagination cursor (not used for random)
+ * - limit: Number of posts to return (max 50)
+ * - topic: Filter by topic/hashtag
+ */
+export function getDiscoverFeedHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    const { sort, cursor, limit: limitParam, topic } = req.query;
+
+    // Validate sort parameter
+    const validSorts: FeedSort[] = ["newest", "popular", "random"];
+    const sortValue = (sort as string) || "newest";
+    if (!validSorts.includes(sortValue as FeedSort)) {
+      throw new ValidationError("sort must be 'newest', 'popular', or 'random'");
+    }
+
+    let limit = DEFAULT_LIMIT;
+    if (limitParam !== undefined) {
+      const parsed = parseInt(limitParam as string, 10);
+      if (isNaN(parsed) || parsed < 1) {
+        throw new ValidationError("limit must be a positive integer");
+      }
+      limit = Math.min(parsed, MAX_LIMIT);
+    }
+
+    const result = getDiscoverFeed({
+      sort: sortValue as FeedSort,
+      cursor: (cursor as string | undefined) || null,
+      limit,
+      topic: (topic as string | undefined) || undefined,
+    });
+
+    res.json({
+      posts: result.posts,
+      nextCursor: result.nextCursor,
+      hasMore: result.hasMore,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Get hot/trending feed
+ * GET /api/v1/feed/hot
+ *
+ * Uses trending algorithm: hot_score / (age_hours + 2)^1.5
+ * Where hot_score = (reply_count * 2) + upvotes - downvotes
+ *
+ * Query params:
+ * - cursor: Offset-based pagination cursor
+ * - limit: Number of posts to return (max 50)
+ * - hoursBack: How far back to look (default 48 hours)
+ */
+export function getHotFeedHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    const { cursor, limit: limitParam, hoursBack: hoursBackParam } = req.query;
+
+    let limit = DEFAULT_LIMIT;
+    if (limitParam !== undefined) {
+      const parsed = parseInt(limitParam as string, 10);
+      if (isNaN(parsed) || parsed < 1) {
+        throw new ValidationError("limit must be a positive integer");
+      }
+      limit = Math.min(parsed, MAX_LIMIT);
+    }
+
+    let hoursBack: number | undefined;
+    if (hoursBackParam !== undefined) {
+      const parsed = parseInt(hoursBackParam as string, 10);
+      if (isNaN(parsed) || parsed < 1) {
+        throw new ValidationError("hoursBack must be a positive integer");
+      }
+      hoursBack = Math.min(parsed, 168); // Max 1 week
+    }
+
+    const result = getHotFeed({
+      cursor: (cursor as string | undefined) || null,
+      limit,
+      hoursBack,
+    });
 
     res.json({
       posts: result.posts,
