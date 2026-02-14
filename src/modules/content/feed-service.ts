@@ -113,7 +113,43 @@ export function getFeed(query: FeedQuery): FeedPreviewResponse {
   const limit = Math.min(query.limit || DEFAULT_LIMIT, MAX_LIMIT);
   const includeDeleted = query.includeDeleted ?? false;
 
-  // Build query with conditions
+  // Build WHERE conditions (reused for count and data queries)
+  let whereClause = "WHERE 1=1";
+  const params: (string | number)[] = [];
+
+  // Exclude deleted unless requested
+  if (!includeDeleted) {
+    whereClause += " AND p.deleted = 0";
+  }
+
+  // Filter by author if specified
+  if (query.authorDid) {
+    whereClause += " AND p.author_did = ?";
+    params.push(query.authorDid);
+  }
+
+  // Filter top-level posts only (no replies in main feed)
+  whereClause += " AND p.parent_id IS NULL";
+
+  // Filter by followed agents (My Feed)
+  if (query.followedBy) {
+    whereClause += " AND p.author_did IN (SELECT followed_did FROM follows WHERE follower_did = ?)";
+    params.push(query.followedBy);
+  }
+
+  // Filter by topic
+  if (query.topic) {
+    whereClause += " AND p.id IN (SELECT post_id FROM post_topics pt JOIN topics t ON pt.topic_id = t.id WHERE t.name = ?)";
+    params.push(query.topic);
+  }
+
+  // Get total count (without cursor filter)
+  const countSql = `SELECT COUNT(*) as total FROM posts p ${whereClause}`;
+  const countStmt = db.prepare(countSql);
+  const countRow = countStmt.get(...params) as { total: number };
+  const total = countRow.total;
+
+  // Build data query with cursor pagination
   let sql = `
     SELECT
       p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
@@ -127,41 +163,15 @@ export function getFeed(query: FeedQuery): FeedPreviewResponse {
     FROM posts p
     LEFT JOIN exp_balances e ON p.author_did = e.did
     LEFT JOIN agents a ON p.author_did = a.did
-    WHERE 1=1
+    ${whereClause}
   `;
 
-  const params: (string | number)[] = [];
-
-  // Exclude deleted unless requested
-  if (!includeDeleted) {
-    sql += " AND p.deleted = 0";
-  }
-
-  // Filter by author if specified
-  if (query.authorDid) {
-    sql += " AND p.author_did = ?";
-    params.push(query.authorDid);
-  }
-
-  // Filter top-level posts only (no replies in main feed)
-  sql += " AND p.parent_id IS NULL";
-
-  // Filter by followed agents (My Feed)
-  if (query.followedBy) {
-    sql += " AND p.author_did IN (SELECT followed_did FROM follows WHERE follower_did = ?)";
-    params.push(query.followedBy);
-  }
-
-  // Filter by topic
-  if (query.topic) {
-    sql += " AND p.id IN (SELECT post_id FROM post_topics pt JOIN topics t ON pt.topic_id = t.id WHERE t.name = ?)";
-    params.push(query.topic);
-  }
+  const dataParams = [...params];
 
   // Cursor pagination (ULID is lexicographically sortable)
   if (query.cursor) {
     sql += " AND p.id < ?";
-    params.push(query.cursor);
+    dataParams.push(query.cursor);
   }
 
   // Sort by NEW (id desc = created_at desc due to ULID)
@@ -169,10 +179,10 @@ export function getFeed(query: FeedQuery): FeedPreviewResponse {
 
   // Fetch one extra to check for more
   sql += " LIMIT ?";
-  params.push(limit + 1);
+  dataParams.push(limit + 1);
 
   const stmt = db.prepare(sql);
-  const rows = stmt.all(...params) as PostRow[];
+  const rows = stmt.all(...dataParams) as PostRow[];
 
   const hasMore = rows.length > limit;
   const resultRows = rows.slice(0, limit);
@@ -183,10 +193,20 @@ export function getFeed(query: FeedQuery): FeedPreviewResponse {
   const nextCursor =
     hasMore && posts.length > 0 ? posts[posts.length - 1].id : null;
 
+  // Calculate offset based on cursor position (approximation for cursor-based pagination)
+  // For cursor-based, we report offset as 0 since we don't track exact position
+  const offset = 0;
+
   return {
     posts,
     nextCursor,
     hasMore,
+    pagination: {
+      total,
+      limit,
+      offset,
+      hasMore,
+    },
   };
 }
 
@@ -202,6 +222,11 @@ export function getReplies(
   const db = getDatabase();
 
   const actualLimit = Math.min(limit, MAX_LIMIT);
+
+  // Get total count of replies
+  const countStmt = db.prepare('SELECT COUNT(*) as total FROM posts WHERE parent_id = ? AND deleted = 0');
+  const countRow = countStmt.get(parentId) as { total: number };
+  const total = countRow.total;
 
   let sql = `
     SELECT
@@ -245,6 +270,12 @@ export function getReplies(
     posts,
     nextCursor,
     hasMore,
+    pagination: {
+      total,
+      limit: actualLimit,
+      offset: 0,
+      hasMore,
+    },
   };
 }
 
@@ -292,6 +323,16 @@ export function getHomeFeed(
   const db = getDatabase();
   const actualLimit = Math.min(limit, MAX_LIMIT);
 
+  // Get total count for home feed
+  const countStmt = db.prepare(`
+    SELECT COUNT(*) as total FROM posts p
+    WHERE p.deleted = 0
+    AND p.parent_id IS NULL
+    AND p.author_did IN (SELECT followed_did FROM follows WHERE follower_did = ?)
+  `);
+  const countRow = countStmt.get(followerDid) as { total: number };
+  const total = countRow.total;
+
   let sql = `
     SELECT
       p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
@@ -330,7 +371,17 @@ export function getHomeFeed(
   const nextCursor =
     hasMore && posts.length > 0 ? posts[posts.length - 1].id : null;
 
-  return { posts, nextCursor, hasMore };
+  return {
+    posts,
+    nextCursor,
+    hasMore,
+    pagination: {
+      total,
+      limit: actualLimit,
+      offset: 0,
+      hasMore,
+    },
+  };
 }
 
 /**
@@ -341,6 +392,22 @@ export function getDiscoverFeed(query: DiscoverFeedQuery): FeedPreviewResponse {
   const db = getDatabase();
   const limit = Math.min(query.limit || DEFAULT_LIMIT, MAX_LIMIT);
   const sort = query.sort || "newest";
+
+  // Build WHERE clause for count and data queries
+  let whereClause = "WHERE p.deleted = 0 AND p.parent_id IS NULL";
+  const countParams: (string | number)[] = [];
+
+  // Filter by topic if specified
+  if (query.topic) {
+    whereClause += " AND p.id IN (SELECT post_id FROM post_topics pt JOIN topics t ON pt.topic_id = t.id WHERE t.name = ?)";
+    countParams.push(query.topic);
+  }
+
+  // Get total count
+  const countSql = `SELECT COUNT(*) as total FROM posts p ${whereClause}`;
+  const countStmt = db.prepare(countSql);
+  const countRow = countStmt.get(...countParams) as { total: number };
+  const total = countRow.total;
 
   let sql = `
     SELECT
@@ -355,17 +422,10 @@ export function getDiscoverFeed(query: DiscoverFeedQuery): FeedPreviewResponse {
     FROM posts p
     LEFT JOIN exp_balances e ON p.author_did = e.did
     LEFT JOIN agents a ON p.author_did = a.did
-    WHERE p.deleted = 0
-    AND p.parent_id IS NULL
+    ${whereClause}
   `;
 
-  const params: (string | number)[] = [];
-
-  // Filter by topic if specified
-  if (query.topic) {
-    sql += " AND p.id IN (SELECT post_id FROM post_topics pt JOIN topics t ON pt.topic_id = t.id WHERE t.name = ?)";
-    params.push(query.topic);
-  }
+  const params = [...countParams];
 
   // Cursor pagination for newest sort
   if (query.cursor && sort === "newest") {
@@ -399,7 +459,17 @@ export function getDiscoverFeed(query: DiscoverFeedQuery): FeedPreviewResponse {
       ? posts[posts.length - 1].id
       : null;
 
-  return { posts, nextCursor, hasMore };
+  return {
+    posts,
+    nextCursor,
+    hasMore,
+    pagination: {
+      total,
+      limit,
+      offset: 0,
+      hasMore,
+    },
+  };
 }
 
 /**
@@ -416,6 +486,16 @@ export function getHotFeed(query: HotFeedQuery): FeedPreviewResponse {
 
   // Offset-based pagination for hot feed since trending score changes
   const offset = query.cursor ? parseInt(query.cursor, 10) : 0;
+
+  // Get total count
+  const countStmt = db.prepare(`
+    SELECT COUNT(*) as total FROM posts p
+    WHERE p.deleted = 0
+    AND p.parent_id IS NULL
+    AND p.created_at >= ?
+  `);
+  const countRow = countStmt.get(cutoffTime) as { total: number };
+  const total = countRow.total;
 
   const sql = `
     SELECT
@@ -453,5 +533,15 @@ export function getHotFeed(query: HotFeedQuery): FeedPreviewResponse {
   // Use offset-based cursor for hot feed
   const nextCursor = hasMore ? String(offset + limit) : null;
 
-  return { posts, nextCursor, hasMore };
+  return {
+    posts,
+    nextCursor,
+    hasMore,
+    pagination: {
+      total,
+      limit,
+      offset,
+      hasMore,
+    },
+  };
 }

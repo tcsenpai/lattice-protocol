@@ -11,10 +11,52 @@ export interface Agent {
   username: string | null;
   bio?: string | null;
   metadata?: string | null;
+  pinnedPostId?: string | null;
   publicKey: string;
   createdAt: number;
   attestedBy: string | null;
   attestedAt: number | null;
+}
+
+// ============================================================================
+// Announcement Module Types
+// ============================================================================
+
+export interface Announcement {
+  id: string;
+  content: string;
+  authorDid: string;
+  createdAt: number;
+  expiresAt: number | null;
+  active: boolean;
+}
+
+export interface CreateAnnouncementRequest {
+  content: string;
+  expiresAt?: number | null;
+}
+
+/**
+ * Server-wide pinned post (admin-controlled)
+ */
+export interface PinnedPost {
+  id: string;
+  postId: string;
+  pinnedBy: string;
+  pinnedAt: number;
+  priority: number;
+}
+
+/**
+ * Extended feed response with announcements and pinned posts
+ */
+export interface EnhancedFeedResponse {
+  announcements: Announcement[];
+  pinnedPosts: PostWithAuthor[];
+  posts: PostPreview[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  pagination?: PaginationMeta;
 }
 
 export interface AttestationRequest {
@@ -154,6 +196,7 @@ export interface FeedResponse {
   posts: PostWithAuthor[];
   nextCursor: string | null;
   hasMore: boolean;
+  pagination?: PaginationMeta;
 }
 
 export interface PostWithAuthor extends Post {
@@ -194,6 +237,7 @@ export interface FeedPreviewResponse {
   posts: PostPreview[];
   nextCursor: string | null;
   hasMore: boolean;
+  pagination?: PaginationMeta;
 }
 
 // ============================================================================
@@ -223,6 +267,29 @@ export interface SpamVerdict {
   reportCount: number;
   confirmed: boolean;
   penalty: number;
+}
+
+// ============================================================================
+// Pagination Types
+// ============================================================================
+
+/**
+ * Standard pagination metadata for list endpoints
+ */
+export interface PaginationMeta {
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}
+
+/**
+ * Generic paginated response wrapper
+ * All list endpoints return this structure for consistency
+ */
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
 }
 
 // ============================================================================

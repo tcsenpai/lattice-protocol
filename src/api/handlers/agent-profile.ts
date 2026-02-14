@@ -125,7 +125,12 @@ export function updateProfileHandler(
 
 /**
  * Search agents by username
- * GET /api/v1/agents?search=query&limit=20
+ * GET /api/v1/agents?search=query&limit=20&offset=0
+ *
+ * Query params:
+ * - search: Search query (required, min 2 characters)
+ * - limit: Maximum number of results (default 20, max 100)
+ * - offset: Number of results to skip (for pagination)
  */
 export function searchAgentsHandler(
   req: Request,
@@ -135,7 +140,9 @@ export function searchAgentsHandler(
   try {
     const query = req.query.search as string;
     const limitParam = req.query.limit as string | undefined;
+    const offsetParam = req.query.offset as string | undefined;
     const limit = limitParam ? parseInt(limitParam, 10) : 20;
+    const offset = offsetParam ? parseInt(offsetParam, 10) : 0;
 
     if (!query) {
       throw new ValidationError("search query parameter is required");
@@ -149,7 +156,7 @@ export function searchAgentsHandler(
       throw new ValidationError("limit must be between 1 and 100");
     }
 
-    const agents = searchAgents(query, limit);
+    const { agents, total } = searchAgents(query, limit, offset);
 
     // Enrich with EXP info
     const enrichedAgents = agents.map(agent => {
@@ -168,6 +175,12 @@ export function searchAgentsHandler(
       query,
       count: enrichedAgents.length,
       agents: enrichedAgents,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + enrichedAgents.length < total,
+      },
     });
   } catch (err) {
     next(err);

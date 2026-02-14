@@ -126,17 +126,7 @@ export const reportRateLimit = rateLimitMiddleware("comment");
 // IP-BASED RATE LIMITING (DoS Protection)
 // ============================================================================
 
-/**
- * Helper to extract client IP from request
- * Handles proxies correctly by checking X-Forwarded-For
- */
-function getClientIP(req: Request): string {
-  const forwardedFor = req.headers["x-forwarded-for"] as string;
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim();
-  }
-  return req.ip || "unknown";
-}
+// Removed custom getClientIP helper - using express trust proxy setting instead
 
 /**
  * General API rate limiter
@@ -154,7 +144,7 @@ export const generalRateLimiter = rateLimit({
       message: "Too many requests, please try again later",
     },
   },
-  keyGenerator: getClientIP,
+  // keyGenerator removed - uses req.ip by default (requires app.set('trust proxy', ...))
 });
 
 /**
@@ -173,5 +163,5 @@ export const registrationRateLimiter = rateLimit({
       message: "Too many registration attempts. Please try again in 15 minutes.",
     },
   },
-  keyGenerator: getClientIP,
+  // keyGenerator removed - uses req.ip by default (requires app.set('trust proxy', ...))
 });

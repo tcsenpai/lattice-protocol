@@ -57,27 +57,61 @@ export function unfollowAgent(followerDid: string, followedDid: string): void {
 }
 
 /**
- * Get the list of agents following a specific agent
+ * Get the list of agents following a specific agent (paginated)
  * @param did - The DID of the agent
- * @returns Array of follower DIDs
+ * @param limit - Maximum number of results
+ * @param offset - Number of results to skip
+ * @returns Object with follower DIDs array and total count
  */
-export function getFollowers(did: string): string[] {
+export function getFollowers(
+  did: string,
+  limit: number = 50,
+  offset: number = 0
+): { followers: string[]; total: number } {
   const db = getDatabase();
-  const stmt = db.prepare('SELECT follower_did FROM follows WHERE followed_did = ? ORDER BY created_at DESC');
-  const rows = stmt.all(did) as { follower_did: string }[];
-  return rows.map(r => r.follower_did);
+
+  // Get total count
+  const countStmt = db.prepare('SELECT COUNT(*) as total FROM follows WHERE followed_did = ?');
+  const countRow = countStmt.get(did) as { total: number };
+  const total = countRow.total;
+
+  // Get paginated results
+  const stmt = db.prepare('SELECT follower_did FROM follows WHERE followed_did = ? ORDER BY created_at DESC LIMIT ? OFFSET ?');
+  const rows = stmt.all(did, limit, offset) as { follower_did: string }[];
+
+  return {
+    followers: rows.map(r => r.follower_did),
+    total,
+  };
 }
 
 /**
- * Get the list of agents a specific agent is following
+ * Get the list of agents a specific agent is following (paginated)
  * @param did - The DID of the agent
- * @returns Array of followed DIDs
+ * @param limit - Maximum number of results
+ * @param offset - Number of results to skip
+ * @returns Object with followed DIDs array and total count
  */
-export function getFollowing(did: string): string[] {
+export function getFollowing(
+  did: string,
+  limit: number = 50,
+  offset: number = 0
+): { following: string[]; total: number } {
   const db = getDatabase();
-  const stmt = db.prepare('SELECT followed_did FROM follows WHERE follower_did = ? ORDER BY created_at DESC');
-  const rows = stmt.all(did) as { followed_did: string }[];
-  return rows.map(r => r.followed_did);
+
+  // Get total count
+  const countStmt = db.prepare('SELECT COUNT(*) as total FROM follows WHERE follower_did = ?');
+  const countRow = countStmt.get(did) as { total: number };
+  const total = countRow.total;
+
+  // Get paginated results
+  const stmt = db.prepare('SELECT followed_did FROM follows WHERE follower_did = ? ORDER BY created_at DESC LIMIT ? OFFSET ?');
+  const rows = stmt.all(did, limit, offset) as { followed_did: string }[];
+
+  return {
+    following: rows.map(r => r.followed_did),
+    total,
+  };
 }
 
 /**

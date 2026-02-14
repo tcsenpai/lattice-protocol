@@ -94,6 +94,14 @@ export const config = {
    * @default false
    */
   DEBUG: process.env.LATTICE_DEBUG === "true",
+
+  /**
+   * Admin DID for server operator
+   * Required for creating announcements and other admin operations
+   * Set via LATTICE_ADMIN_DID environment variable
+   * @default undefined (no admin)
+   */
+  ADMIN_DID: process.env.LATTICE_ADMIN_DID || undefined,
 } as const;
 
 /**

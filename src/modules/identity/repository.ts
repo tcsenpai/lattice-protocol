@@ -44,7 +44,7 @@ export function getAgent(did: string): Agent | null {
   const db = getDatabase();
 
   const stmt = db.prepare(`
-    SELECT did, username, bio, metadata, public_key, created_at, attested_by, attested_at
+    SELECT did, username, bio, metadata, pinned_post_id, public_key, created_at, attested_by, attested_at
     FROM agents
     WHERE did = ?
   `);
@@ -55,6 +55,7 @@ export function getAgent(did: string): Agent | null {
         username: string | null;
         bio: string | null;
         metadata: string | null;
+        pinned_post_id: string | null;
         public_key: string;
         created_at: number;
         attested_by: string | null;
@@ -69,6 +70,7 @@ export function getAgent(did: string): Agent | null {
     username: row.username,
     bio: row.bio,
     metadata: row.metadata,
+    pinnedPostId: row.pinned_post_id,
     publicKey: row.public_key,
     createdAt: row.created_at,
     attestedBy: row.attested_by,
@@ -85,7 +87,7 @@ export function getAgentByUsername(username: string): Agent | null {
   const db = getDatabase();
 
   const stmt = db.prepare(`
-    SELECT did, username, bio, metadata, public_key, created_at, attested_by, attested_at
+    SELECT did, username, bio, metadata, pinned_post_id, public_key, created_at, attested_by, attested_at
     FROM agents
     WHERE username = ?
   `);
@@ -96,6 +98,7 @@ export function getAgentByUsername(username: string): Agent | null {
         username: string | null;
         bio: string | null;
         metadata: string | null;
+        pinned_post_id: string | null;
         public_key: string;
         created_at: number;
         attested_by: string | null;
@@ -110,6 +113,7 @@ export function getAgentByUsername(username: string): Agent | null {
     username: row.username,
     bio: row.bio,
     metadata: row.metadata,
+    pinnedPostId: row.pinned_post_id,
     publicKey: row.public_key,
     createdAt: row.created_at,
     attestedBy: row.attested_by,
@@ -195,13 +199,33 @@ export function updateAgentProfile(
  * Search agents by username (fuzzy matching)
  * @param query - Search query
  * @param limit - Maximum number of results
- * @returns Array of matching agents
+ * @param offset - Number of results to skip (for pagination)
+ * @returns Object with agents array and total count
  */
-export function searchAgents(query: string, limit: number = 20): Agent[] {
+export function searchAgents(
+  query: string,
+  limit: number = 20,
+  offset: number = 0
+): { agents: Agent[]; total: number } {
   const db = getDatabase();
 
+  const searchPattern = `%${query}%`;
+  const exactMatch = query;
+  const prefixMatch = `${query}%`;
+
+  // Get total count
+  const countStmt = db.prepare(`
+    SELECT COUNT(*) as total
+    FROM agents
+    WHERE username IS NOT NULL
+    AND username LIKE ?
+  `);
+  const countRow = countStmt.get(searchPattern) as { total: number };
+  const total = countRow.total;
+
+  // Get paginated results
   const stmt = db.prepare(`
-    SELECT did, username, public_key, bio, metadata, created_at, attested_by, attested_at
+    SELECT did, username, public_key, bio, metadata, pinned_post_id, created_at, attested_by, attested_at
     FROM agents
     WHERE username IS NOT NULL
     AND username LIKE ?
@@ -213,32 +237,65 @@ export function searchAgents(query: string, limit: number = 20): Agent[] {
       END,
       attested_at DESC NULLS LAST,
       created_at DESC
-    LIMIT ?
+    LIMIT ? OFFSET ?
   `);
 
-  const searchPattern = `%${query}%`;
-  const exactMatch = query;
-  const prefixMatch = `${query}%`;
-
-  const rows = stmt.all(searchPattern, exactMatch, prefixMatch, limit) as Array<{
+  const rows = stmt.all(searchPattern, exactMatch, prefixMatch, limit, offset) as Array<{
     did: string;
     username: string | null;
     public_key: string;
     bio: string | null;
     metadata: string | null;
+    pinned_post_id: string | null;
     created_at: number;
     attested_by: string | null;
     attested_at: number | null;
   }>;
 
-  return rows.map(row => ({
+  const agents = rows.map(row => ({
     did: row.did,
     username: row.username,
     publicKey: row.public_key,
     bio: row.bio,
     metadata: row.metadata,
+    pinnedPostId: row.pinned_post_id,
     createdAt: row.created_at,
     attestedBy: row.attested_by,
     attestedAt: row.attested_at,
   }));
+
+  return { agents, total };
+}
+
+/**
+ * Pin a post to an agent's profile
+ * @param did - The agent's DID
+ * @param postId - The post ID to pin (or null to unpin)
+ */
+export function setAgentPinnedPost(did: string, postId: string | null): void {
+  const db = getDatabase();
+
+  const stmt = db.prepare(`
+    UPDATE agents
+    SET pinned_post_id = ?
+    WHERE did = ?
+  `);
+
+  stmt.run(postId, did);
+}
+
+/**
+ * Get an agent's pinned post ID
+ * @param did - The agent's DID
+ * @returns The pinned post ID or null
+ */
+export function getAgentPinnedPostId(did: string): string | null {
+  const db = getDatabase();
+
+  const stmt = db.prepare(`
+    SELECT pinned_post_id FROM agents WHERE did = ?
+  `);
+
+  const row = stmt.get(did) as { pinned_post_id: string | null } | undefined;
+  return row?.pinned_post_id ?? null;
 }

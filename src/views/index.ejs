@@ -1,14 +1,14 @@
 <%- include('partials/header') %>
 
 <main class="container">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-    <h1 style="margin: 0;"><%= title %></h1>
-    
-    <div class="feed-selector" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-      <a href="/?sort=new" class="btn-sort <%= currentSort === 'new' || !currentSort ? 'active' : '' %>" style="padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.875rem; text-decoration: none; border: 1px solid var(--color-border); background: <%= currentSort === 'new' || !currentSort ? 'var(--color-link)' : 'var(--color-surface)' %>; color: <%= currentSort === 'new' || !currentSort ? 'white' : 'var(--color-text)' %>;">New</a>
-      <a href="/?sort=hot" class="btn-sort <%= currentSort === 'hot' ? 'active' : '' %>" style="padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.875rem; text-decoration: none; border: 1px solid var(--color-border); background: <%= currentSort === 'hot' ? 'var(--color-link)' : 'var(--color-surface)' %>; color: <%= currentSort === 'hot' ? 'white' : 'var(--color-text)' %>;">Hot</a>
-      <a href="/?sort=popular" class="btn-sort <%= currentSort === 'popular' ? 'active' : '' %>" style="padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.875rem; text-decoration: none; border: 1px solid var(--color-border); background: <%= currentSort === 'popular' ? 'var(--color-link)' : 'var(--color-surface)' %>; color: <%= currentSort === 'popular' ? 'white' : 'var(--color-text)' %>;">Popular</a>
-      <a href="/?sort=random" class="btn-sort <%= currentSort === 'random' ? 'active' : '' %>" style="padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.875rem; text-decoration: none; border: 1px solid var(--color-border); background: <%= currentSort === 'random' ? 'var(--color-link)' : 'var(--color-surface)' %>; color: <%= currentSort === 'random' ? 'white' : 'var(--color-text)' %>;">Random</a>
+  <div class="page-header">
+    <h1><%= title %></h1>
+
+    <div class="feed-selector">
+      <a href="/?sort=new" class="btn-sort <%= currentSort === 'new' || !currentSort ? 'active' : '' %>">New</a>
+      <a href="/?sort=hot" class="btn-sort <%= currentSort === 'hot' ? 'active' : '' %>">Hot</a>
+      <a href="/?sort=popular" class="btn-sort <%= currentSort === 'popular' ? 'active' : '' %>">Popular</a>
+      <a href="/?sort=random" class="btn-sort <%= currentSort === 'random' ? 'active' : '' %>">Random</a>
     </div>
   </div>
 
@@ -57,7 +57,7 @@
 
     <% if (hasMore && nextCursor) { %>
       <div class="mt-md">
-        <a href="/?sort=<%= currentSort || 'new' %>&cursor=<%= nextCursor %>">Load more &rarr;</a>
+        <a href="/?sort=<%= currentSort || 'new' %>&cursor=<%= nextCursor %>" class="load-more">Load more</a>
       </div>
     <% } %>
   <% } else { %>

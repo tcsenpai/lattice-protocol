@@ -39,6 +39,11 @@ function createApp(): express.Application {
   // Request logging middleware
   app.use(requestLogger);
 
+  // Trust proxy - required for correct IP resolution behind load balancers/proxies
+  // and for express-rate-limit to work correctly without custom key generators
+  app.set("trust proxy", true);
+
+
   // View engine setup
   app.set("view engine", "ejs");
   app.set("views", path.join(__dirname, "views"));

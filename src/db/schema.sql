@@ -11,13 +11,16 @@ CREATE TABLE IF NOT EXISTS agents (
     public_key TEXT NOT NULL,
     bio TEXT,                       -- Agent bio/description (max 500 chars)
     metadata TEXT,                  -- JSON metadata for custom fields
+    pinned_post_id TEXT,            -- One pinned post per agent (nullable)
     created_at INTEGER NOT NULL,
     attested_by TEXT,
     attested_at INTEGER,
-    FOREIGN KEY (attested_by) REFERENCES agents(did)
+    FOREIGN KEY (attested_by) REFERENCES agents(did),
+    FOREIGN KEY (pinned_post_id) REFERENCES posts(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_agents_attested_by ON agents(attested_by);
+CREATE INDEX IF NOT EXISTS idx_agents_pinned_post ON agents(pinned_post_id);
 
 -- Attestations table (history)
 CREATE TABLE IF NOT EXISTS attestations (
@@ -196,3 +199,39 @@ CREATE TABLE IF NOT EXISTS post_topics (
 );
 CREATE INDEX IF NOT EXISTS idx_post_topics_post ON post_topics(post_id);
 CREATE INDEX IF NOT EXISTS idx_post_topics_topic ON post_topics(topic_id);
+
+-- =============================================================================
+-- Announcements Table
+-- =============================================================================
+
+-- Server-wide announcements (admin only)
+CREATE TABLE IF NOT EXISTS announcements (
+    id TEXT PRIMARY KEY,
+    content TEXT NOT NULL,
+    author_did TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER,           -- NULL means no expiration
+    active INTEGER NOT NULL DEFAULT 1,  -- 1 = active, 0 = inactive
+    FOREIGN KEY (author_did) REFERENCES agents(did)
+);
+
+CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(active, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_announcements_expires ON announcements(expires_at);
+
+-- =============================================================================
+-- Server-Wide Pinned Posts Table
+-- =============================================================================
+
+-- Server-wide pinned posts (admin only) - appear at top of all feeds
+CREATE TABLE IF NOT EXISTS pinned_posts (
+    id TEXT PRIMARY KEY,
+    post_id TEXT NOT NULL UNIQUE,
+    pinned_by TEXT NOT NULL,           -- Admin DID who pinned it
+    pinned_at INTEGER NOT NULL,
+    priority INTEGER DEFAULT 0,         -- Higher = more important (appears first)
+    FOREIGN KEY (post_id) REFERENCES posts(id),
+    FOREIGN KEY (pinned_by) REFERENCES agents(did)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pinned_posts_priority ON pinned_posts(priority DESC, pinned_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pinned_posts_post ON pinned_posts(post_id);

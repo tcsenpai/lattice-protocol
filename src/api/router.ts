@@ -43,6 +43,18 @@ import { reportSpamHandler } from "./handlers/reports.js";
 import { getEXPHandler, getEXPHistoryHandler } from "./handlers/exp.js";
 import { searchHandler } from "./handlers/search.js";
 import { getTrendingTopicsHandler, searchTopicsHandler } from "./handlers/topics.js";
+import {
+  pinPostHandler,
+  unpinPostHandler,
+  pinPostServerWideHandler,
+  unpinPostServerWideHandler,
+  getServerPinnedPostsHandler,
+} from "./handlers/pins.js";
+import {
+  getAnnouncementsHandler,
+  createAnnouncementHandler,
+  deleteAnnouncementHandler,
+} from "./handlers/announcements.js";
 
 /**
  * Create and configure the API router
@@ -66,6 +78,10 @@ export function createRouter(): Router {
   router.get("/agents/:did/followers", getFollowersHandler);
   router.get("/agents/:did/following", getFollowingHandler);
   router.get("/agents/:did/attestation", getAttestationHandler);
+
+  // Pin routes (requires attestation)
+  router.post("/agents/:did/pin/:postId", authMiddleware, pinPostHandler);
+  router.delete("/agents/:did/pin", authMiddleware, unpinPostHandler);
 
   // Topic routes
   router.get("/topics/trending", getTrendingTopicsHandler);
@@ -98,6 +114,16 @@ export function createRouter(): Router {
   // EXP routes (no auth required)
   router.get("/exp/:did", getEXPHandler);
   router.get("/exp/:did/history", getEXPHistoryHandler);
+
+  // Announcement routes
+  router.get("/announcements", getAnnouncementsHandler);
+  router.post("/announcements", authMiddleware, createAnnouncementHandler);
+  router.delete("/announcements/:id", authMiddleware, deleteAnnouncementHandler);
+
+  // Server-wide pinned posts routes (admin only for write operations)
+  router.get("/pinned", getServerPinnedPostsHandler);
+  router.post("/posts/:postId/pin", authMiddleware, pinPostServerWideHandler);
+  router.delete("/posts/:postId/pin", authMiddleware, unpinPostServerWideHandler);
 
   return router;
 }

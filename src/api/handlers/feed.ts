@@ -14,9 +14,43 @@ import {
   getHomeFeed,
   getDiscoverFeed,
   getHotFeed,
+  getPostWithAuthor,
 } from "../../modules/content/feed-service.js";
+import {
+  getActiveAnnouncements,
+  getServerPinnedPosts,
+} from "../../modules/announcements/repository.js";
 import { ValidationError, AuthError } from "../middleware/error.js";
-import type { FeedQuery, FeedSort } from "../../types/index.js";
+import type { FeedQuery, FeedSort, PostWithAuthor } from "../../types/index.js";
+
+/**
+ * Get announcements and pinned posts for feed enhancement
+ * Only includes non-deleted pinned posts
+ */
+function getEnhancedFeedData(): {
+  announcements: ReturnType<typeof getActiveAnnouncements>;
+  pinnedPosts: PostWithAuthor[];
+} {
+  // Get active announcements
+  const announcements = getActiveAnnouncements();
+
+  // Get server-wide pinned posts with full details
+  const pinnedPostRecords = getServerPinnedPosts();
+  const pinnedPosts: PostWithAuthor[] = [];
+
+  for (const record of pinnedPostRecords) {
+    const post = getPostWithAuthor(record.postId);
+    if (post && !post.deleted) {
+      // Add pinned metadata to the post
+      pinnedPosts.push({
+        ...post,
+        // Add extra metadata
+      });
+    }
+  }
+
+  return { announcements, pinnedPosts };
+}
 
 /**
  * Maximum posts per page
@@ -73,10 +107,17 @@ export function getFeedHandler(
 
     const result = getFeed(query);
 
+    // Get enhanced feed data (announcements and pinned posts) for first page only
+    const isFirstPage = !cursor;
+    const enhanced = isFirstPage ? getEnhancedFeedData() : { announcements: [], pinnedPosts: [] };
+
     res.json({
+      announcements: enhanced.announcements,
+      pinnedPosts: enhanced.pinnedPosts,
       posts: result.posts,
       nextCursor: result.nextCursor,
       hasMore: result.hasMore,
+      pagination: result.pagination,
     });
   } catch (err) {
     next(err);
@@ -120,6 +161,7 @@ export function getRepliesHandler(
       posts: result.posts,
       nextCursor: result.nextCursor,
       hasMore: result.hasMore,
+      pagination: result.pagination,
     });
   } catch (err) {
     next(err);
@@ -163,10 +205,17 @@ export function getHomeFeedHandler(
       limit
     );
 
+    // Get enhanced feed data (announcements and pinned posts) for first page only
+    const isFirstPage = !cursor;
+    const enhanced = isFirstPage ? getEnhancedFeedData() : { announcements: [], pinnedPosts: [] };
+
     res.json({
+      announcements: enhanced.announcements,
+      pinnedPosts: enhanced.pinnedPosts,
       posts: result.posts,
       nextCursor: result.nextCursor,
       hasMore: result.hasMore,
+      pagination: result.pagination,
     });
   } catch (err) {
     next(err);
@@ -214,10 +263,17 @@ export function getDiscoverFeedHandler(
       topic: (topic as string | undefined) || undefined,
     });
 
+    // Get enhanced feed data (announcements and pinned posts) for first page only
+    const isFirstPage = !cursor;
+    const enhanced = isFirstPage ? getEnhancedFeedData() : { announcements: [], pinnedPosts: [] };
+
     res.json({
+      announcements: enhanced.announcements,
+      pinnedPosts: enhanced.pinnedPosts,
       posts: result.posts,
       nextCursor: result.nextCursor,
       hasMore: result.hasMore,
+      pagination: result.pagination,
     });
   } catch (err) {
     next(err);
@@ -268,10 +324,17 @@ export function getHotFeedHandler(
       hoursBack,
     });
 
+    // Get enhanced feed data (announcements and pinned posts) for first page only
+    const isFirstPage = !cursor || cursor === "0";
+    const enhanced = isFirstPage ? getEnhancedFeedData() : { announcements: [], pinnedPosts: [] };
+
     res.json({
+      announcements: enhanced.announcements,
+      pinnedPosts: enhanced.pinnedPosts,
       posts: result.posts,
       nextCursor: result.nextCursor,
       hasMore: result.hasMore,
+      pagination: result.pagination,
     });
   } catch (err) {
     next(err);

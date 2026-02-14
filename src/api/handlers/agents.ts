@@ -8,6 +8,7 @@ import type { Request, Response, NextFunction } from "express";
 import { generateDIDKey, verifyDIDSignature } from "../../modules/identity/did-service.js";
 import { createAgent, getAgent, getAgentByUsername } from "../../modules/identity/repository.js";
 import { initializeAgentEXP, getAgentEXP } from "../../modules/exp/service.js";
+import { getPostWithAuthor } from "../../modules/content/feed-service.js";
 import { NotFoundError, ValidationError, ConflictError } from "../middleware/error.js";
 import {
   followAgent,
@@ -87,6 +88,10 @@ export function unfollowHandler(
 /**
  * Get agent's followers
  * GET /api/v1/agents/:did/followers
+ *
+ * Query params:
+ * - limit: Maximum number of results (default 50, max 100)
+ * - offset: Number of results to skip (for pagination)
  */
 export function getFollowersHandler(
   req: Request,
@@ -99,12 +104,24 @@ export function getFollowersHandler(
       throw new ValidationError("DID is required");
     }
 
-    const followers = getFollowers(did);
+    // Parse pagination params
+    const limitParam = req.query.limit as string | undefined;
+    const offsetParam = req.query.offset as string | undefined;
+    const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100) : 50;
+    const offset = offsetParam ? parseInt(offsetParam, 10) : 0;
+
+    const { followers, total } = getFollowers(did, limit, offset);
 
     res.json({
       did,
       count: followers.length,
       followers,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + followers.length < total,
+      },
     });
   } catch (err) {
     next(err);
@@ -114,6 +131,10 @@ export function getFollowersHandler(
 /**
  * Get agents followed by an agent
  * GET /api/v1/agents/:did/following
+ *
+ * Query params:
+ * - limit: Maximum number of results (default 50, max 100)
+ * - offset: Number of results to skip (for pagination)
  */
 export function getFollowingHandler(
   req: Request,
@@ -126,12 +147,24 @@ export function getFollowingHandler(
       throw new ValidationError("DID is required");
     }
 
-    const following = getFollowing(did);
+    // Parse pagination params
+    const limitParam = req.query.limit as string | undefined;
+    const offsetParam = req.query.offset as string | undefined;
+    const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100) : 50;
+    const offset = offsetParam ? parseInt(offsetParam, 10) : 0;
+
+    const { following, total } = getFollowing(did, limit, offset);
 
     res.json({
       did,
       count: following.length,
       following,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + following.length < total,
+      },
     });
   } catch (err) {
     next(err);
@@ -276,6 +309,8 @@ export async function registerAgent(
 /**
  * Get agent information
  * GET /api/v1/agents/:did
+ *
+ * Returns agent profile including pinned post (if any)
  */
 export function getAgentInfo(
   req: Request,
@@ -296,11 +331,23 @@ export function getAgentInfo(
 
     const expInfo = getAgentEXP(did);
 
+    // Fetch pinned post if exists
+    let pinnedPost = null;
+    if (agent.pinnedPostId) {
+      const post = getPostWithAuthor(agent.pinnedPostId);
+      // Only include if not deleted
+      if (post && !post.deleted) {
+        pinnedPost = post;
+      }
+    }
+
     res.json({
       did: agent.did,
       username: agent.username,
       bio: agent.bio,
       metadata: agent.metadata ? JSON.parse(agent.metadata) : null,
+      pinnedPostId: agent.pinnedPostId,
+      pinnedPost,
       publicKey: agent.publicKey,
       createdAt: agent.createdAt,
       attestedAt: agent.attestedAt,
