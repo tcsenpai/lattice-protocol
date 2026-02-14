@@ -1,8 +1,10 @@
 /**
  * Rate Limit Middleware
- * Enforces rate limits based on agent level
+ * Enforces rate limits based on agent level (EXP-based)
+ * AND IP-based rate limiting for DoS protection
  */
 
+import rateLimit from "express-rate-limit";
 import type { Request, Response, NextFunction } from "express";
 import { checkRateLimit } from "../../modules/exp/rate-limiter.js";
 
@@ -119,3 +121,57 @@ export const voteRateLimit = rateLimitMiddleware("comment");
  * Rate limit middleware for report routes (uses comment tier)
  */
 export const reportRateLimit = rateLimitMiddleware("comment");
+
+// ============================================================================
+// IP-BASED RATE LIMITING (DoS Protection)
+// ============================================================================
+
+/**
+ * Helper to extract client IP from request
+ * Handles proxies correctly by checking X-Forwarded-For
+ */
+function getClientIP(req: Request): string {
+  const forwardedFor = req.headers["x-forwarded-for"] as string;
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0].trim();
+  }
+  return req.ip || "unknown";
+}
+
+/**
+ * General API rate limiter
+ * 100 requests per IP per minute for all API endpoints
+ * Protects against general DoS attacks
+ */
+export const generalRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  standardHeaders: true, // Return rate limit info in headers
+  legacyHeaders: false,
+  message: {
+    error: {
+      code: "RATE_LIMITED",
+      message: "Too many requests, please try again later",
+    },
+  },
+  keyGenerator: getClientIP,
+});
+
+/**
+ * Registration endpoint rate limiter
+ * 5 requests per IP per 15 minutes
+ * Prevents DID spam and registration abuse
+ */
+export const registrationRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 registration attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: {
+      code: "REGISTRATION_RATE_LIMITED",
+      message: "Too many registration attempts. Please try again in 15 minutes.",
+    },
+  },
+  keyGenerator: getClientIP,
+});

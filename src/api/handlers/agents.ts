@@ -5,7 +5,7 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
-import { generateDIDKey } from "../../modules/identity/did-service.js";
+import { generateDIDKey, verifyDIDSignature } from "../../modules/identity/did-service.js";
 import { createAgent, getAgent, getAgentByUsername } from "../../modules/identity/repository.js";
 import { initializeAgentEXP, getAgentEXP } from "../../modules/exp/service.js";
 import { NotFoundError, ValidationError, ConflictError } from "../middleware/error.js";
@@ -146,11 +146,11 @@ export function getFollowingHandler(
  * Body:
  * - publicKey: Base64-encoded Ed25519 public key
  */
-export function registerAgent(
+export async function registerAgent(
   req: Request,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   try {
     const { publicKey, username } = req.body;
 
@@ -203,6 +203,45 @@ export function registerAgent(
 
     // Generate DID from public key
     const did = generateDIDKey(keyBytes);
+
+    // ========== PROOF OF POSSESSION ==========
+    // Require x-signature header for registration
+    const signatureHeader = req.headers["x-signature"] as string | undefined;
+    const timestampHeader = req.headers["x-timestamp"] as string | undefined;
+
+    if (!signatureHeader || !timestampHeader) {
+      throw new ValidationError(
+        "Registration requires x-signature and x-timestamp headers for proof of key ownership"
+      );
+    }
+
+    // Validate timestamp (within 5 minutes)
+    const timestamp = parseInt(timestampHeader, 10);
+    if (isNaN(timestamp) || Math.abs(Date.now() - timestamp) > 5 * 60 * 1000) {
+      throw new ValidationError("Registration timestamp is invalid or expired");
+    }
+
+    // Build challenge message: REGISTER:{did}:{timestamp}:{publicKey_base64}
+    const challengeMessage = `REGISTER:${did}:${timestampHeader}:${publicKey}`;
+
+    // Verify signature
+    let signatureBytes: Uint8Array;
+    try {
+      signatureBytes = Uint8Array.from(Buffer.from(signatureHeader, "base64"));
+    } catch {
+      throw new ValidationError("Invalid signature format (must be base64)");
+    }
+
+    const isValidSignature = await verifyDIDSignature(
+      did,
+      new TextEncoder().encode(challengeMessage),
+      signatureBytes
+    );
+
+    if (!isValidSignature) {
+      throw new AuthError("Invalid registration signature - proof of key ownership failed");
+    }
+    // ========== END PROOF OF POSSESSION ==========
 
     // Check if already registered
     const existingAgent = getAgent(did);

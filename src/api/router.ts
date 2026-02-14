@@ -7,7 +7,12 @@ import { Router } from "express";
 
 // Middleware
 import { authMiddleware, optionalAuthMiddleware } from "./middleware/auth.js";
-import { postRateLimit, voteRateLimit, reportRateLimit } from "./middleware/rate-limit.js";
+import {
+  postRateLimit,
+  voteRateLimit,
+  reportRateLimit,
+  registrationRateLimiter
+} from "./middleware/rate-limit.js";
 
 // Handlers
 import { getHealth } from "./handlers/health.js";
@@ -49,7 +54,7 @@ export function createRouter(): Router {
   router.get("/health", getHealth);
 
   // Agent routes
-  router.post("/agents", registerAgent);
+  router.post("/agents", registrationRateLimiter, registerAgent);
   router.get("/agents/me", authMiddleware, getMeHandler);
   router.get("/agents", searchAgentsHandler);
   router.get("/agents/:did", getAgentInfo);

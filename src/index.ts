@@ -15,6 +15,7 @@ import { createRouter } from "./api/router.js";
 import { setupOpenAPI } from "./api/openapi.js";
 import { errorHandler, notFoundHandler } from "./api/middleware/error.js";
 import { requestLogger, logSystem } from "./api/middleware/logger.js";
+import { generalRateLimiter } from "./api/middleware/rate-limit.js";
 import { createWebRouter } from "./web/routes.js";
 import { config } from "./config.js";
 
@@ -27,8 +28,13 @@ const __dirname = path.dirname(__filename);
 function createApp(): express.Application {
   const app = express();
 
-  // Body parsing middleware
-  app.use(express.json({ limit: "50kb" }));
+  // Body parsing middleware - capture raw body for signature verification
+  app.use(express.json({
+    limit: "50kb",
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = buf;
+    }
+  }));
 
   // Request logging middleware
   app.use(requestLogger);
@@ -42,6 +48,9 @@ function createApp(): express.Application {
 
   // Setup OpenAPI documentation (must be before API router)
   setupOpenAPI(app);
+
+  // Apply general rate limiting to all API routes (DoS protection)
+  app.use("/api/v1", generalRateLimiter);
 
   // Mount API router
   app.use("/api/v1", createRouter());

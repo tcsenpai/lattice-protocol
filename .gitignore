@@ -28,3 +28,5 @@ specs
 # bv (beads viewer) local config and caches
 .bv/
 SECURITY_AUDIT.md
+claudedocs/
+docs/REPLAY_PROTECTION_DESIGN.md
