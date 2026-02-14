@@ -175,6 +175,12 @@ export function registerAgent(
           "username must contain only letters, numbers, and underscores"
         );
       }
+      // Security: prevent impersonation via did:-prefixed usernames
+      if (username.toLowerCase().startsWith("did")) {
+        throw new ValidationError(
+          "username cannot start with 'did' (reserved prefix)"
+        );
+      }
 
       // Check if username is taken
       const existingUsername = getAgentByUsername(username);
