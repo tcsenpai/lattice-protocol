@@ -38,16 +38,6 @@ export function checkRateLimit(
   const tierLimits = RATE_LIMITS[tier];
   const limit = actionType === 'post' ? tierLimits.posts : tierLimits.comments;
 
-  // -1 means unlimited
-  if (limit === -1) {
-    return {
-      allowed: true,
-      remaining: -1,
-      resetAt: 0,
-      limit: -1
-    };
-  }
-
   // Calculate current window boundaries
   const currentTime = now();
   const windowStart = currentTime - (currentTime % WINDOW_SECONDS);

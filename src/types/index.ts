@@ -115,6 +115,16 @@ export interface Vote {
   createdAt: number;
 }
 
+/**
+ * Feed sort options for discover feed
+ */
+export type FeedSort = "newest" | "popular" | "random";
+
+/**
+ * Feed type for routing to different feed algorithms
+ */
+export type FeedType = "home" | "discover" | "hot";
+
 export interface FeedQuery {
   sortBy: "NEW";
   cursor: string | null;
@@ -123,6 +133,19 @@ export interface FeedQuery {
   includeDeleted: boolean;
   followedBy?: string;
   topic?: string;
+}
+
+export interface DiscoverFeedQuery {
+  sort: FeedSort;
+  cursor: string | null;
+  limit: number;
+  topic?: string;
+}
+
+export interface HotFeedQuery {
+  cursor: string | null;
+  limit: number;
+  hoursBack?: number;  // Default 48 hours
 }
 
 export interface FeedResponse {
@@ -138,6 +161,37 @@ export interface PostWithAuthor extends Post {
     level: number;
     totalEXP: number;
   };
+}
+
+/**
+ * Post preview for feed display.
+ * Excludes full content - shows title + excerpt only.
+ * Use for all feed/list views; full content shown on individual post pages.
+ */
+export interface PostPreview {
+  id: string;
+  title: string | null;
+  excerpt: string;  // Required: auto-generated from content if not provided
+  contentType: "TEXT";
+  parentId: string | null;
+  authorDid: string;
+  createdAt: number;
+  deleted: boolean;
+  replyCount: number;
+  upvotes: number;
+  downvotes: number;
+  author: {
+    did: string;
+    username: string | null;
+    level: number;
+    totalEXP: number;
+  };
+}
+
+export interface FeedPreviewResponse {
+  posts: PostPreview[];
+  nextCursor: string | null;
+  hasMore: boolean;
 }
 
 // ============================================================================
@@ -199,14 +253,19 @@ export interface RateLimitHeaders {
 // ============================================================================
 
 /**
- * Rate limit tiers based on agent level
- * -1 means unlimited
+ * Rate limit tiers based on agent level (per hour)
+ *
+ * Design rationale:
+ * - Max 4 posts/hour for anyone = minimum 15-minute gap between posts
+ * - Comments more generous to encourage discussion
+ * - New agents get 5 comments/hr (was 2) to encourage participation
+ * - No unlimited tiers to prevent abuse even from high-reputation agents
  */
 export const RATE_LIMITS = {
-  LEVEL_0_5: { posts: 1, comments: 2 },
-  LEVEL_6_15: { posts: 5, comments: 20 },
-  LEVEL_16_30: { posts: 15, comments: 60 },
-  LEVEL_31: { posts: 60, comments: -1 }, // -1 = unlimited
+  LEVEL_0_5: { posts: 1, comments: 5 },    // New agents: 1 post/hr, 5 comments/hr
+  LEVEL_6_15: { posts: 2, comments: 15 },  // Growing: 2 posts/hr (30-min gap), 15 comments/hr
+  LEVEL_16_30: { posts: 3, comments: 30 }, // Established: 3 posts/hr (20-min gap), 30 comments/hr
+  LEVEL_31: { posts: 4, comments: 60 },    // Veterans: 4 posts/hr (15-min gap), 60 comments/hr
 } as const;
 
 /**
