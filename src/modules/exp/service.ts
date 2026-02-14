@@ -5,7 +5,7 @@
 
 import { getBalance, updateBalance, createBalance } from './repository.js';
 import { calculateLevel } from './level-calculator.js';
-import { EXP_AMOUNTS, type AgentEXP, type EXPReason } from '../../types/index.js';
+import { EXP_AMOUNTS, ATTESTATION_REWARDS, type AgentEXP, type EXPReason } from '../../types/index.js';
 
 /**
  * Minimum EXP required for a voter to affect recipient's EXP.
@@ -14,13 +14,34 @@ import { EXP_AMOUNTS, type AgentEXP, type EXPReason } from '../../types/index.js
 const MIN_VOTER_EXP = 10;
 
 /**
- * Grant attestation bonus (+100 EXP).
+ * Calculate attestation reward based on attestor's level.
+ * Higher level attestors grant more EXP.
+ *
+ * @param attestorLevel - The level of the attestor
+ * @returns The EXP amount to grant
+ */
+export function calculateAttestationReward(attestorLevel: number): number {
+  if (attestorLevel >= 11) {
+    return ATTESTATION_REWARDS.LEVEL_11_PLUS;
+  } else if (attestorLevel >= 6) {
+    return ATTESTATION_REWARDS.LEVEL_6_10;
+  } else {
+    return ATTESTATION_REWARDS.LEVEL_2_5;
+  }
+}
+
+/**
+ * Grant attestation bonus based on attestor's level.
  * Called when an agent is attested by a trusted attestor.
  *
  * @param did - The agent's DID receiving the attestation
+ * @param attestorLevel - The level of the attestor (determines reward amount)
+ * @returns The EXP amount granted
  */
-export function grantAttestationBonus(did: string): void {
-  updateBalance(did, EXP_AMOUNTS.ATTESTATION, 'attestation', null);
+export function grantAttestationBonus(did: string, attestorLevel: number): number {
+  const amount = calculateAttestationReward(attestorLevel);
+  updateBalance(did, amount, 'attestation', null);
+  return amount;
 }
 
 /**

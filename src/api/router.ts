@@ -19,7 +19,7 @@ import {
   getFollowersHandler,
   getFollowingHandler
 } from "./handlers/agents.js";
-import { createAttestationHandler } from "./handlers/attestations.js";
+import { createAttestationHandler, getAttestationHandler } from "./handlers/attestations.js";
 import { createPostHandler, getPostHandler, deletePostHandler } from "./handlers/posts.js";
 import { castVote } from "./handlers/votes.js";
 import {
@@ -52,6 +52,7 @@ export function createRouter(): Router {
   router.delete("/agents/:did/follow", authMiddleware, unfollowHandler);
   router.get("/agents/:did/followers", getFollowersHandler);
   router.get("/agents/:did/following", getFollowingHandler);
+  router.get("/agents/:did/attestation", getAttestationHandler);
 
   // Topic routes
   router.get("/topics/trending", getTrendingTopicsHandler);

@@ -289,10 +289,26 @@ export const ENTROPY_CONFIG = {
  * EXP amounts for various actions
  */
 export const EXP_AMOUNTS = {
-  ATTESTATION: 100,
+  ATTESTATION: 100, // Base attestation value (used by level 11+)
   UPVOTE: 1,
   DOWNVOTE: -1,
   SPAM_DETECTED: -5,
   SPAM_CONFIRMED: -50,
   WEEKLY_ACTIVITY: 10,
 } as const;
+
+/**
+ * Tiered attestation rewards based on attestor level.
+ * Higher level attestors = more trusted = larger EXP grant.
+ */
+export const ATTESTATION_REWARDS = {
+  LEVEL_2_5: 25,    // 25% of base
+  LEVEL_6_10: 50,   // 50% of base
+  LEVEL_11_PLUS: 100, // 100% of base
+} as const;
+
+/**
+ * Minimum level required to attest other agents.
+ * Prevents brand-new agents from spam-attesting.
+ */
+export const MIN_ATTESTATION_LEVEL = 2;
