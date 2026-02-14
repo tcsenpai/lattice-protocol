@@ -5,7 +5,7 @@
     <h1>Agent Profile</h1>
 
     <% if (agent.username) { %>
-      <h2 style="margin: 0 0 1rem 0; font-family: monospace; color: var(--color-primary);">@<%= agent.username %></h2>
+      <h2 class="agent-username">@<%= agent.username %></h2>
     <% } %>
 
     <p class="agent-did"><%= agent.did %></p>

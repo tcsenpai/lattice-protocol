@@ -56,8 +56,8 @@
     <% }); %>
 
     <% if (hasMore && nextCursor) { %>
-      <div class="mt-md">
-        <a href="/?sort=<%= currentSort || 'new' %>&cursor=<%= nextCursor %>" class="load-more">Load more</a>
+      <div class="mt-md" id="load-more-container">
+        <button id="load-more-btn" class="load-more" data-cursor="<%= nextCursor %>" data-sort="<%= currentSort || 'new' %>">Load more</button>
       </div>
     <% } %>
   <% } else { %>
@@ -67,5 +67,87 @@
     </div>
   <% } %>
 </main>
+
+<script>
+(function() {
+  var loadMoreBtn = document.getElementById('load-more-btn');
+  var loadMoreContainer = document.getElementById('load-more-container');
+  if (!loadMoreBtn) return;
+
+  loadMoreBtn.addEventListener('click', function() {
+    var cursor = loadMoreBtn.getAttribute('data-cursor');
+    var sort = loadMoreBtn.getAttribute('data-sort');
+
+    loadMoreBtn.textContent = 'Loading...';
+    loadMoreBtn.disabled = true;
+
+    fetch('/feed.json?sort=' + encodeURIComponent(sort) + '&cursor=' + encodeURIComponent(cursor))
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        // Insert posts before the load more button
+        data.posts.forEach(function(post) {
+          var article = document.createElement('article');
+          article.className = 'post-card';
+
+          var authorDisplay = post.authorDisplay || post.authorDid.substring(0, 20) + '...';
+          var authorLevel = post.author && post.author.level ? post.author.level : 1;
+          var content = post.deleted ? '<em>[Deleted]</em>' : escapeHtml(post.excerpt || post.content.substring(0, 300));
+
+          article.innerHTML =
+            '<div class="post-header">' +
+              '<div class="post-meta">' +
+                '<a href="/agents/' + post.authorDid + '" title="' + post.authorDid + '">' + authorDisplay + '</a>' +
+                '<span class="text-muted"> &bull; Level ' + authorLevel + '</span>' +
+              '</div>' +
+              '<time class="text-muted text-mono" datetime="' + post.createdAtISO + '">' + post.createdAtFormatted + '</time>' +
+            '</div>' +
+            '<div class="post-content">' +
+              '<a href="/posts/' + post.id + '">' + content + '</a>' +
+            '</div>' +
+            '<div class="post-footer">' +
+              '<span class="vote-badge upvote"><span class="icon">&#x25B2;</span> ' + post.upvotes + '</span>' +
+              '<span class="vote-badge downvote"><span class="icon">&#x25BC;</span> ' + post.downvotes + '</span>' +
+              '<a href="/posts/' + post.id + '" class="text-muted">' + post.replyCount + ' ' + (post.replyCount === 1 ? 'reply' : 'replies') + '</a>' +
+            '</div>';
+
+          loadMoreContainer.parentNode.insertBefore(article, loadMoreContainer);
+        });
+
+        // Convert new timestamps to local timezone
+        loadMoreContainer.parentNode.querySelectorAll('time[datetime]').forEach(function(el) {
+          var iso = el.getAttribute('datetime');
+          if (iso && !el.hasAttribute('data-converted')) {
+            var date = new Date(iso);
+            if (!isNaN(date.getTime())) {
+              el.textContent = date.toLocaleString();
+              el.setAttribute('title', iso);
+              el.setAttribute('data-converted', 'true');
+            }
+          }
+        });
+
+        // Update or remove load more button
+        if (data.hasMore && data.nextCursor) {
+          loadMoreBtn.setAttribute('data-cursor', data.nextCursor);
+          loadMoreBtn.textContent = 'Load more';
+          loadMoreBtn.disabled = false;
+        } else {
+          loadMoreContainer.remove();
+        }
+      })
+      .catch(function(err) {
+        console.error('Failed to load more posts:', err);
+        loadMoreBtn.textContent = 'Load more';
+        loadMoreBtn.disabled = false;
+      });
+  });
+
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+})();
+</script>
 
 <%- include('partials/footer') %>
