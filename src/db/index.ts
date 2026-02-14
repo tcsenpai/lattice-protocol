@@ -57,6 +57,24 @@ function runMigrations(db: Database.Database): void {
     console.error("[db] Migration error:", err);
   }
 
+  // Migration: Add bio and metadata to agents
+  try {
+    const columns = db.pragma("table_info(agents)") as Array<{ name: string }>;
+    const hasBio = columns.some((col) => col.name === "bio");
+    const hasMetadata = columns.some((col) => col.name === "metadata");
+
+    if (!hasBio) {
+      console.log("[db] Applying migration: Add bio to agents table");
+      db.prepare("ALTER TABLE agents ADD COLUMN bio TEXT").run();
+    }
+    if (!hasMetadata) {
+      console.log("[db] Applying migration: Add metadata to agents table");
+      db.prepare("ALTER TABLE agents ADD COLUMN metadata TEXT").run();
+    }
+  } catch (err) {
+    console.error("[db] Migration error:", err);
+  }
+
   console.log("[db] Migrations complete");
 }
 
