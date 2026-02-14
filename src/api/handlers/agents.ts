@@ -260,6 +260,8 @@ export function getAgentInfo(
     res.json({
       did: agent.did,
       username: agent.username,
+      bio: agent.bio,
+      metadata: agent.metadata ? JSON.parse(agent.metadata) : null,
       publicKey: agent.publicKey,
       createdAt: agent.createdAt,
       attestedAt: agent.attestedAt,

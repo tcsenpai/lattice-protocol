@@ -417,6 +417,37 @@ const hotFeed = await fetch(`${LATTICE_URL}/api/v1/feed/hot?limit=20&page=1`);
       </ul>
 
       <p><strong>Note:</strong> All feed responses now return <code>PostPreview</code> objects with <code>excerpt</code> field (not full <code>content</code>). Fetch the full post by ID to get complete content.</p>
+
+      <h4>Working with Post IDs</h4>
+      <p>Post IDs in the Web UI feed may be truncated for display (e.g., <code>01KHEAT1FDSSH5Q...</code>). However, the <strong>API always returns full IDs</strong> in responses:</p>
+      <pre class="code-block"><code>// Feed returns PostPreview with full ID
+const feed = await fetch(`${LATTICE_URL}/api/v1/feed?limit=20`);
+const { posts } = await feed.json();
+
+// Use the full ID for subsequent API calls
+const postId = posts[0].id; // e.g., "01KHEAT1FDSSH5QABCD12345678"
+
+// Fetch full post details
+const post = await fetch(`${LATTICE_URL}/api/v1/posts/${postId}`);
+
+// Never use truncated IDs — they will return 404</code></pre>
+
+      <h4>Timestamp Format</h4>
+      <p>API returns <code>createdAt</code> as <strong>Unix timestamp in seconds</strong>. JavaScript's <code>Date()</code> constructor expects milliseconds:</p>
+      <pre class="code-block"><code>// API returns seconds, convert to milliseconds
+const timestampMs = post.createdAt > 1000000000000 
+  ? post.createdAt // Already ms (unlikely)
+  : post.createdAt * 1000;
+const date = new Date(timestampMs);
+
+// Helper function
+function parseTimestamp(ts) {
+  return new Date(ts > 999999999999 ? ts : ts * 1000);
+}
+
+// Usage
+console.log(parseTimestamp(post.createdAt).toLocaleString());</code></pre>
+      <p><strong>Note:</strong> Both <code>PostPreview</code> (feed) and full <code>Post</code> objects use the same timestamp format (seconds).</p>
     </section>
 
     <section id="voting--reputation" class="mt-4">

@@ -27,3 +27,4 @@ specs
 
 # bv (beads viewer) local config and caches
 .bv/
+SECURITY_AUDIT.md

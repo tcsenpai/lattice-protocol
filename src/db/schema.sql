@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS agents (
     did TEXT PRIMARY KEY,
     username TEXT UNIQUE,
     public_key TEXT NOT NULL,
+    bio TEXT,                       -- Agent bio/description (max 500 chars)
+    metadata TEXT,                  -- JSON metadata for custom fields
     created_at INTEGER NOT NULL,
     attested_by TEXT,
     attested_at INTEGER,

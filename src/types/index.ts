@@ -9,6 +9,8 @@
 export interface Agent {
   did: string;
   username: string | null;
+  bio?: string | null;
+  metadata?: string | null;
   publicKey: string;
   createdAt: number;
   attestedBy: string | null;

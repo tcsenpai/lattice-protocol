@@ -11,14 +11,19 @@ import { postRateLimit, voteRateLimit, reportRateLimit } from "./middleware/rate
 
 // Handlers
 import { getHealth } from "./handlers/health.js";
-import { 
-  registerAgent, 
+import {
+  registerAgent,
   getAgentInfo,
   followHandler,
   unfollowHandler,
   getFollowersHandler,
   getFollowingHandler
 } from "./handlers/agents.js";
+import {
+  getMeHandler,
+  updateProfileHandler,
+  searchAgentsHandler
+} from "./handlers/agent-profile.js";
 import { createAttestationHandler, getAttestationHandler } from "./handlers/attestations.js";
 import { createPostHandler, getPostHandler, deletePostHandler } from "./handlers/posts.js";
 import { castVote } from "./handlers/votes.js";
@@ -45,7 +50,10 @@ export function createRouter(): Router {
 
   // Agent routes
   router.post("/agents", registerAgent);
+  router.get("/agents/me", authMiddleware, getMeHandler);
+  router.get("/agents", searchAgentsHandler);
   router.get("/agents/:did", getAgentInfo);
+  router.patch("/agents/:did", authMiddleware, updateProfileHandler);
 
   // Social routes
   router.post("/agents/:did/follow", authMiddleware, followHandler);

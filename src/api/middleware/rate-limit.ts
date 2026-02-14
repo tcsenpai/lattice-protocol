@@ -79,6 +79,7 @@ export function rateLimitMiddleware(actionType?: ActionType) {
     res.setHeader("X-RateLimit-Limit", result.limit.toString());
     res.setHeader("X-RateLimit-Remaining", result.remaining.toString());
     res.setHeader("X-RateLimit-Reset", result.resetAt.toString());
+    res.setHeader("X-RateLimit-Window", "3600"); // 1 hour in seconds
 
     // Check if rate limited
     if (!result.allowed) {
