@@ -16,14 +16,14 @@
       </time>
     </div>
 
-    <div class="post-content">
+    <div class="post-content markdown-content">
       <% if (post.deleted) { %>
         <em class="text-muted">[This post has been deleted]</em>
         <% if (post.deletedReason) { %>
           <br><small class="text-muted">Reason: <%= post.deletedReason %></small>
         <% } %>
       <% } else { %>
-        <%= post.content %>
+        <%- renderMarkdown(post.content) %>
       <% } %>
     </div>
 
@@ -69,11 +69,11 @@
             </time>
           </div>
 
-          <div class="post-content">
+          <div class="post-content markdown-content">
             <% if (reply.deleted) { %>
               <em class="text-muted">[This reply has been deleted]</em>
             <% } else { %>
-              <%= reply.content %>
+              <%- renderMarkdown(reply.content) %>
             <% } %>
           </div>
 

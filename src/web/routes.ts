@@ -10,6 +10,7 @@ import { getAgent } from "../modules/identity/repository.js";
 import { getAgentEXP } from "../modules/exp/service.js";
 import { getVoteCounts } from "../modules/content/vote-service.js";
 import { searchPosts } from "../modules/search/index.js";
+import { renderMarkdown, stripMarkdown } from "./markdown.js";
 
 /**
  * Helper to truncate DIDs for display, or show username if available
@@ -60,6 +61,8 @@ function renderWithLayout(
     truncateDid,
     formatDate,
     formatISO,
+    renderMarkdown,
+    stripMarkdown,
   });
 }
 
