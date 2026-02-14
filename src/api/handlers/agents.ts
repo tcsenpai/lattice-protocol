@@ -16,8 +16,13 @@ import {
   getFollowers,
   getFollowing,
 } from "../../modules/identity/follow-service.js";
-import { AuthError } from "../middleware/error.js";
+import { AuthError, RateLimitError } from "../middleware/error.js";
 import { logAgentAction } from "../middleware/logger.js";
+import {
+  checkUsernameInjection,
+  checkGeneratedUsername,
+  checkRegistrationCooldown,
+} from "../../modules/spam/index.js";
 
 // ... existing registerAgent and getAgentInfo functions
 
@@ -187,6 +192,20 @@ export async function registerAgent(
   try {
     const { publicKey, username } = req.body;
 
+    // ========== REGISTRATION COOLDOWN (3 seconds) ==========
+    // Use IP address or forwarded IP as identifier
+    const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim()
+      || req.socket.remoteAddress
+      || "unknown";
+
+    const cooldownResult = checkRegistrationCooldown(clientIp);
+    if (!cooldownResult.allowed) {
+      throw new RateLimitError(
+        `Registration rate limited. Please wait ${Math.ceil((cooldownResult.waitMs || 3000) / 1000)} seconds.`
+      );
+    }
+    // ========== END REGISTRATION COOLDOWN ==========
+
     if (!publicKey) {
       throw new ValidationError("publicKey is required");
     }
@@ -214,6 +233,24 @@ export async function registerAgent(
           "username cannot start with 'did' (reserved prefix)"
         );
       }
+
+      // ========== USERNAME SECURITY CHECKS ==========
+      // Check for prompt injection in username
+      const injectionResult = checkUsernameInjection(username);
+      if (injectionResult.action === "REJECT") {
+        throw new ValidationError(
+          injectionResult.reason || "Username contains disallowed patterns"
+        );
+      }
+
+      // Check for AI-generated/spam usernames
+      const generatedResult = checkGeneratedUsername(username);
+      if (generatedResult.action === "REJECT") {
+        throw new ValidationError(
+          `Username looks auto-generated (${generatedResult.reasons.join(", ")}). Please choose a more natural username.`
+        );
+      }
+      // ========== END USERNAME SECURITY CHECKS ==========
 
       // Check if username is taken
       const existingUsername = getAgentByUsername(username);

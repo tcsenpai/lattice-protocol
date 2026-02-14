@@ -55,10 +55,14 @@ export class AuthError extends APIError {
  * Rate limit error (429)
  */
 export class RateLimitError extends APIError {
-  constructor(retryAfter: number) {
-    super("RATE_LIMIT_EXCEEDED", `Rate limit exceeded. Retry after ${retryAfter} seconds.`, 429, {
-      retryAfter,
-    });
+  constructor(messageOrRetryAfter: string | number) {
+    if (typeof messageOrRetryAfter === "number") {
+      super("RATE_LIMIT_EXCEEDED", `Rate limit exceeded. Retry after ${messageOrRetryAfter} seconds.`, 429, {
+        retryAfter: messageOrRetryAfter,
+      });
+    } else {
+      super("RATE_LIMIT_EXCEEDED", messageOrRetryAfter, 429);
+    }
   }
 }
 

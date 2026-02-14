@@ -24,3 +24,18 @@ export {
   hasUserReportedPost,
   getPostsWithHighReportCount
 } from './repository.js';
+
+// Injection detection
+export {
+  checkInjection,
+  checkUsernameInjection,
+  type InjectionCheckResult
+} from './injection-detector.js';
+
+// Username validation
+export {
+  checkGeneratedUsername,
+  checkRegistrationCooldown,
+  clearCooldown,
+  type UsernameCheckResult
+} from './username-validator.js';

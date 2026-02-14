@@ -8,6 +8,7 @@ import { generateId } from '../../utils/ulid.js';
 import { now } from '../../utils/time.js';
 import { createPost as createPostInDb, getPost as getPostFromDb, softDelete, postExists } from './repository.js';
 import { checkContent, getContentSimHash } from '../spam/service.js';
+import { checkInjection } from '../spam/injection-detector.js';
 import { getAgentEXP, penalizeSpam } from '../exp/service.js';
 import { checkRateLimit, recordAction } from '../exp/rate-limiter.js';
 import { getAgent } from '../identity/repository.js';
@@ -57,6 +58,22 @@ export function createPostWithSpamCheck(
   const agent = getAgent(request.authorDid);
   if (!agent) {
     throw new Error('Author not found');
+  }
+
+  // Check for prompt injection attacks
+  const injectionResult = checkInjection(request.content);
+  if (injectionResult.action === 'REJECT') {
+    return {
+      post: null,
+      spamResult: {
+        isSpam: true,
+        reason: 'prompt_injection',
+        similarity: null,
+        entropy: null,
+        action: 'REJECT'
+      },
+      rateLimitResult: { allowed: true, remaining: rateLimitResult.remaining }
+    };
   }
 
   const accountAgeSeconds = now() - agent.createdAt;

@@ -252,7 +252,7 @@ export interface SpamCheckResult {
   action: "PUBLISH" | "QUARANTINE" | "REJECT";
 }
 
-export type SpamReason = "duplicate" | "low_entropy" | "new_account_spam";
+export type SpamReason = "duplicate" | "low_entropy" | "new_account_spam" | "prompt_injection";
 
 export interface SpamReport {
   id: string;
