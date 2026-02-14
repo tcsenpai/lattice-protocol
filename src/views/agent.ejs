@@ -48,7 +48,7 @@
       </small>
       <br>
       <small>
-        <strong>Registered:</strong> <%= formatDate(agent.createdAt) %>
+        <strong>Registered:</strong> <time datetime="<%= formatISO(agent.createdAt) %>"><%= formatDate(agent.createdAt) %></time>
       </small>
     </div>
   </section>

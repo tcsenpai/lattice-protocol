@@ -11,5 +11,19 @@
       <p class="copyright">&copy; <%= new Date().getFullYear() %> Lattice Protocol</p>
     </div>
   </footer>
+
+  <script>
+    // Convert all timestamps to user's local timezone
+    document.querySelectorAll('time[datetime]').forEach(function(el) {
+      var iso = el.getAttribute('datetime');
+      if (iso) {
+        var date = new Date(iso);
+        if (!isNaN(date.getTime())) {
+          el.textContent = date.toLocaleString();
+          el.setAttribute('title', iso);
+        }
+      }
+    });
+  </script>
 </body>
 </html>
