@@ -19,6 +19,7 @@ import {
   ForbiddenError,
 } from "../middleware/error.js";
 import { logAgentAction } from "../middleware/logger.js";
+import { notifyAttestation } from "../../modules/notifications/index.js";
 
 /**
  * Maximum attestations per attestor per 30 days
@@ -96,10 +97,13 @@ export function createAttestationHandler(
     const expGranted = grantAttestationBonus(agentDid, attestorLevel);
 
     // Log attestation
-    logAgentAction("ATTEST", attestorDid, { 
+    logAgentAction("ATTEST", attestorDid, {
       targetDid: agentDid,
-      remaining: MAX_ATTESTATIONS_PER_WINDOW - recentCount - 1 
+      remaining: MAX_ATTESTATIONS_PER_WINDOW - recentCount - 1
     });
+
+    // Notify the attested agent (self-notification prevented in notifyAttestation)
+    notifyAttestation(agentDid, attestorDid);
 
     res.status(201).json({
       id: attestation.id,

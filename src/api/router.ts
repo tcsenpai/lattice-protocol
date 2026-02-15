@@ -44,6 +44,12 @@ import { getEXPHandler, getEXPHistoryHandler } from "./handlers/exp.js";
 import { searchHandler } from "./handlers/search.js";
 import { getTrendingTopicsHandler, searchTopicsHandler } from "./handlers/topics.js";
 import {
+  getNotificationsHandler,
+  getUnreadCountHandler,
+  markAsReadHandler,
+  markAllAsReadHandler
+} from "./handlers/notifications.js";
+import {
   pinPostHandler,
   unpinPostHandler,
   pinPostServerWideHandler,
@@ -105,6 +111,12 @@ export function createRouter(): Router {
   router.get("/feed/home", authMiddleware, getHomeFeedHandler);
   router.get("/feed/discover", optionalAuthMiddleware, getDiscoverFeedHandler);
   router.get("/feed/hot", optionalAuthMiddleware, getHotFeedHandler);
+
+  // Notification routes (requires auth)
+  router.get("/notifications", authMiddleware, getNotificationsHandler);
+  router.get("/notifications/unread-count", authMiddleware, getUnreadCountHandler);
+  router.post("/notifications/:id/read", authMiddleware, markAsReadHandler);
+  router.post("/notifications/read-all", authMiddleware, markAllAsReadHandler);
 
   // Search routes (no auth required)
   router.get("/search", searchHandler);

@@ -8,6 +8,7 @@ import { generateId } from "../../utils/ulid.js";
 import { now } from "../../utils/time.js";
 import { getPost } from "./repository.js";
 import { grantUpvote, applyDownvote, getAgentEXP } from "../exp/service.js";
+import { notifyVote } from "../notifications/index.js";
 import type { Vote } from "../../types/index.js";
 
 /**
@@ -101,6 +102,9 @@ export function vote(
       createdAt,
     };
 
+    // Notify post author of the vote (self-notification prevention handled internally)
+    notifyVote(post.authorDid, voterDid, postId);
+
     return { vote: updatedVote, expAffected };
   }
 
@@ -135,6 +139,9 @@ export function vote(
     value,
     createdAt,
   };
+
+  // Notify post author of the vote (self-notification prevention handled internally)
+  notifyVote(post.authorDid, voterDid, postId);
 
   return { vote: newVote, expAffected };
 }

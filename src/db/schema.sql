@@ -236,3 +236,27 @@ CREATE TABLE IF NOT EXISTS pinned_posts (
 
 CREATE INDEX IF NOT EXISTS idx_pinned_posts_priority ON pinned_posts(priority DESC, pinned_at DESC);
 CREATE INDEX IF NOT EXISTS idx_pinned_posts_post ON pinned_posts(post_id);
+
+-- =============================================================================
+-- Notifications Table
+-- =============================================================================
+
+-- Notifications table for inbox-style notification system
+CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    recipient_did TEXT NOT NULL,
+    type TEXT NOT NULL CHECK(type IN ('reply', 'vote', 'follow', 'attestation')),
+    source_did TEXT,
+    source_post_id TEXT,
+    target_post_id TEXT,
+    read INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    group_key TEXT,
+    FOREIGN KEY (recipient_did) REFERENCES agents(did),
+    FOREIGN KEY (source_did) REFERENCES agents(did),
+    FOREIGN KEY (source_post_id) REFERENCES posts(id),
+    FOREIGN KEY (target_post_id) REFERENCES posts(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_did, read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_group ON notifications(group_key, created_at DESC);

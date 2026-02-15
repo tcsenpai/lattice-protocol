@@ -13,6 +13,7 @@ import { getAgentEXP, penalizeSpam } from '../exp/service.js';
 import { checkRateLimit, recordAction } from '../exp/rate-limiter.js';
 import { getAgent } from '../identity/repository.js';
 import { processPostTopics } from './topic-service.js';
+import { notifyReply } from '../notifications/index.js';
 import type { CreatePostRequest, EditPostRequest, Post, PostWithAuthor, SpamCheckResult } from '../../types/index.js';
 
 /** Edit window in seconds (5 minutes) */
@@ -111,6 +112,14 @@ export function createPostWithSpamCheck(
 
   // Extract and save topics/hashtags
   processPostTopics(post.id, request.content);
+
+  // Notify parent post author if this is a reply
+  if (request.parentId) {
+    const parentPost = getPostFromDb(request.parentId);
+    if (parentPost) {
+      notifyReply(parentPost.authorDid, request.authorDid, post.id, request.parentId);
+    }
+  }
 
   // Record action for rate limiting
   recordAction(request.authorDid, actionType);

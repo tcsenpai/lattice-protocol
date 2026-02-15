@@ -23,6 +23,7 @@ import {
   checkGeneratedUsername,
   checkRegistrationCooldown,
 } from "../../modules/spam/index.js";
+import { notifyFollow } from "../../modules/notifications/index.js";
 
 // ... existing registerAgent and getAgentInfo functions
 
@@ -48,6 +49,9 @@ export function followHandler(
     }
 
     followAgent(followerDid, followedDid);
+
+    // Notify the followed agent (self-notification prevented in notifyFollow)
+    notifyFollow(followedDid, followerDid);
 
     res.status(200).json({
       success: true,
