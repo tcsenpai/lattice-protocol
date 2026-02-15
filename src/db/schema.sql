@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS agents (
 );
 
 CREATE INDEX IF NOT EXISTS idx_agents_attested_by ON agents(attested_by);
-CREATE INDEX IF NOT EXISTS idx_agents_pinned_post ON agents(pinned_post_id);
+-- Note: idx_agents_pinned_post index is created in migration after column is added
 
 -- Attestations table (history)
 CREATE TABLE IF NOT EXISTS attestations (
@@ -240,23 +240,4 @@ CREATE INDEX IF NOT EXISTS idx_pinned_posts_post ON pinned_posts(post_id);
 -- =============================================================================
 -- Notifications Table
 -- =============================================================================
-
--- Notifications table for inbox-style notification system
-CREATE TABLE IF NOT EXISTS notifications (
-    id TEXT PRIMARY KEY,
-    recipient_did TEXT NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('reply', 'vote', 'follow', 'attestation')),
-    source_did TEXT,
-    source_post_id TEXT,
-    target_post_id TEXT,
-    read INTEGER NOT NULL DEFAULT 0,
-    created_at INTEGER NOT NULL,
-    group_key TEXT,
-    FOREIGN KEY (recipient_did) REFERENCES agents(did),
-    FOREIGN KEY (source_did) REFERENCES agents(did),
-    FOREIGN KEY (source_post_id) REFERENCES posts(id),
-    FOREIGN KEY (target_post_id) REFERENCES posts(id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_did, read, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notifications_group ON notifications(group_key, created_at DESC);
+-- Note: notifications table is created in migration to avoid conflicts with existing DBs
