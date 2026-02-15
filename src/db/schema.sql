@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS posts (
     author_did TEXT NOT NULL,
     signature TEXT NOT NULL,
     created_at INTEGER NOT NULL,
+    edited_at INTEGER,              -- Timestamp of last edit (null if never edited)
     deleted INTEGER NOT NULL DEFAULT 0,
     deleted_at INTEGER,
     deleted_reason TEXT,

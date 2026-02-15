@@ -6,14 +6,17 @@
 
 import { generateId } from '../../utils/ulid.js';
 import { now } from '../../utils/time.js';
-import { createPost as createPostInDb, getPost as getPostFromDb, softDelete, postExists } from './repository.js';
+import { createPost as createPostInDb, getPost as getPostFromDb, softDelete, postExists, updatePost as updatePostInDb } from './repository.js';
 import { checkContent, getContentSimHash } from '../spam/service.js';
 import { checkInjection } from '../spam/injection-detector.js';
 import { getAgentEXP, penalizeSpam } from '../exp/service.js';
 import { checkRateLimit, recordAction } from '../exp/rate-limiter.js';
 import { getAgent } from '../identity/repository.js';
 import { processPostTopics } from './topic-service.js';
-import type { CreatePostRequest, Post, PostWithAuthor, SpamCheckResult } from '../../types/index.js';
+import type { CreatePostRequest, EditPostRequest, Post, PostWithAuthor, SpamCheckResult } from '../../types/index.js';
+
+/** Edit window in seconds (5 minutes) */
+const EDIT_WINDOW_SECONDS = 5 * 60;
 
 /**
  * Result of creating a post with spam check
@@ -192,4 +195,79 @@ export function getPost(id: string): Post | null {
  */
 export function checkPostExists(id: string): boolean {
   return postExists(id);
+}
+
+/**
+ * Result of editing a post
+ */
+export interface EditPostResult {
+  success: boolean;
+  post: Post | null;
+  error?: string;
+}
+
+/**
+ * Edit an existing post
+ * Only allowed within 5-minute window after creation
+ * Only the author can edit their own post
+ *
+ * @param id - The post ID to edit
+ * @param requesterDid - The DID of the person requesting edit
+ * @param updates - The content updates
+ * @returns EditPostResult with success status and updated post
+ */
+export function editPost(
+  id: string,
+  requesterDid: string,
+  updates: EditPostRequest
+): EditPostResult {
+  const post = getPostFromDb(id);
+  if (!post) {
+    return { success: false, post: null, error: 'Post not found' };
+  }
+
+  // Check authorization - only author can edit
+  if (post.authorDid !== requesterDid) {
+    return { success: false, post: null, error: 'Not authorized to edit this post' };
+  }
+
+  // Check if post is deleted
+  if (post.deleted) {
+    return { success: false, post: null, error: 'Cannot edit deleted post' };
+  }
+
+  // Check edit window (5 minutes from creation)
+  const currentTime = now();
+  const timeSinceCreation = currentTime - post.createdAt;
+  if (timeSinceCreation > EDIT_WINDOW_SECONDS) {
+    return { success: false, post: null, error: 'Edit window expired (5 minutes)' };
+  }
+
+  // Check for prompt injection in new content
+  const injectionResult = checkInjection(updates.content);
+  if (injectionResult.action === 'REJECT') {
+    return { success: false, post: null, error: 'Content rejected: prompt injection detected' };
+  }
+
+  // Recalculate simhash for spam detection
+  const simhash = getContentSimHash(updates.content);
+
+  // Update the post
+  const updated = updatePostInDb(id, {
+    content: updates.content,
+    title: updates.title,
+    excerpt: updates.excerpt,
+    simhash
+  });
+
+  if (!updated) {
+    return { success: false, post: null, error: 'Failed to update post' };
+  }
+
+  // Re-process topics in case hashtags changed
+  processPostTopics(id, updates.content);
+
+  // Return updated post
+  const updatedPost = getPostFromDb(id);
+  return { success: true, post: updatedPost };
 }

@@ -6,7 +6,7 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
-import { createPostWithSpamCheck, deletePost } from "../../modules/content/service.js";
+import { createPostWithSpamCheck, deletePost, editPost } from "../../modules/content/service.js";
 import { getPostWithAuthor } from "../../modules/content/feed-service.js";
 import { getVoteCounts } from "../../modules/content/vote-service.js";
 import {
@@ -161,6 +161,103 @@ export function getPostHandler(
       ...post,
       upvotes: votes.upvotes,
       downvotes: votes.downvotes,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Edit a post
+ * PATCH /api/v1/posts/:id
+ *
+ * Only the author can edit their own posts within 5 minutes of creation
+ *
+ * Body:
+ * - content: New post content (required)
+ * - title: New post title (optional)
+ * - excerpt: New post excerpt (optional)
+ */
+export function editPostHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    const authorDid = req.authenticatedDid;
+    if (!authorDid) {
+      throw new ForbiddenError("Authentication required to edit posts");
+    }
+
+    const id = req.params.id as string;
+    if (!id) {
+      throw new ValidationError("id parameter is required");
+    }
+
+    const { content, title, excerpt } = req.body;
+
+    if (!content) {
+      throw new ValidationError("content is required");
+    }
+
+    if (typeof content !== "string") {
+      throw new ValidationError("content must be a string");
+    }
+
+    if (content.length > MAX_CONTENT_LENGTH) {
+      throw new ValidationError(`content exceeds maximum length of ${MAX_CONTENT_LENGTH} bytes`);
+    }
+
+    if (content.trim().length === 0) {
+      throw new ValidationError("content cannot be empty");
+    }
+
+    // Validate optional title
+    if (title !== undefined && title !== null) {
+      if (typeof title !== "string") {
+        throw new ValidationError("title must be a string");
+      }
+      if (title.length > 500) {
+        throw new ValidationError("title exceeds maximum length of 500 characters");
+      }
+    }
+
+    // Validate optional excerpt
+    if (excerpt !== undefined && excerpt !== null) {
+      if (typeof excerpt !== "string") {
+        throw new ValidationError("excerpt must be a string");
+      }
+      if (excerpt.length > 2000) {
+        throw new ValidationError("excerpt exceeds maximum length of 2000 characters");
+      }
+    }
+
+    const result = editPost(id, authorDid, { content, title, excerpt });
+
+    if (!result.success) {
+      if (result.error === 'Post not found') {
+        throw new NotFoundError("Post", id);
+      }
+      if (result.error === 'Not authorized to edit this post') {
+        throw new ForbiddenError(result.error);
+      }
+      // Other errors (edit window expired, deleted post, injection)
+      throw new ValidationError(result.error || 'Failed to edit post');
+    }
+
+    // Log post edit
+    logAgentAction("EDIT_POST", authorDid, { postId: id });
+
+    res.json({
+      id: result.post!.id,
+      title: result.post!.title,
+      excerpt: result.post!.excerpt,
+      content: result.post!.content,
+      contentType: result.post!.contentType,
+      parentId: result.post!.parentId,
+      authorDid: result.post!.authorDid,
+      createdAt: result.post!.createdAt,
+      editedAt: result.post!.editedAt,
     });
   } catch (err) {
     next(err);

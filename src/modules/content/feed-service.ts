@@ -33,6 +33,7 @@ interface PostRow {
   author_did: string;
   signature: string;
   created_at: number;
+  edited_at: number | null;
   deleted: number;
   deleted_at: number | null;
   deleted_reason: string | null;
@@ -58,6 +59,7 @@ function rowToPostWithAuthor(row: PostRow): PostWithAuthor {
     authorDid: row.author_did,
     signature: row.signature,
     createdAt: row.created_at,
+    editedAt: row.edited_at,
     deleted: Boolean(row.deleted),
     deletedAt: row.deleted_at,
     deletedReason: row.deleted_reason as "author" | "moderation" | null,
@@ -153,7 +155,7 @@ export function getFeed(query: FeedQuery): FeedPreviewResponse {
   let sql = `
     SELECT
       p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
-      p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
+      p.signature, p.created_at, p.edited_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1), 0) as upvotes,
@@ -231,7 +233,7 @@ export function getReplies(
   let sql = `
     SELECT
       p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
-      p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
+      p.signature, p.created_at, p.edited_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1), 0) as upvotes,
@@ -288,7 +290,7 @@ export function getPostWithAuthor(postId: string): PostWithAuthor | null {
   const sql = `
     SELECT
       p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
-      p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
+      p.signature, p.created_at, p.edited_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1), 0) as upvotes,
@@ -336,7 +338,7 @@ export function getHomeFeed(
   let sql = `
     SELECT
       p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
-      p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
+      p.signature, p.created_at, p.edited_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1), 0) as upvotes,
@@ -412,7 +414,7 @@ export function getDiscoverFeed(query: DiscoverFeedQuery): FeedPreviewResponse {
   let sql = `
     SELECT
       p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
-      p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
+      p.signature, p.created_at, p.edited_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1), 0) as upvotes,
@@ -500,7 +502,7 @@ export function getHotFeed(query: HotFeedQuery): FeedPreviewResponse {
   const sql = `
     SELECT
       p.id, p.title, p.excerpt, p.content, p.content_type, p.parent_id, p.author_did,
-      p.signature, p.created_at, p.deleted, p.deleted_at, p.deleted_reason,
+      p.signature, p.created_at, p.edited_at, p.deleted, p.deleted_at, p.deleted_reason,
       p.simhash,
       COALESCE((SELECT COUNT(*) FROM posts WHERE parent_id = p.id AND deleted = 0), 0) as reply_count,
       COALESCE((SELECT COUNT(*) FROM votes WHERE post_id = p.id AND value = 1), 0) as upvotes,

@@ -30,7 +30,7 @@ import {
   searchAgentsHandler
 } from "./handlers/agent-profile.js";
 import { createAttestationHandler, getAttestationHandler } from "./handlers/attestations.js";
-import { createPostHandler, getPostHandler, deletePostHandler } from "./handlers/posts.js";
+import { createPostHandler, getPostHandler, editPostHandler, deletePostHandler } from "./handlers/posts.js";
 import { castVote } from "./handlers/votes.js";
 import {
   getFeedHandler,
@@ -93,6 +93,7 @@ export function createRouter(): Router {
   // Post routes
   router.post("/posts", authMiddleware, postRateLimit, createPostHandler);
   router.get("/posts/:id", optionalAuthMiddleware, getPostHandler);
+  router.patch("/posts/:id", authMiddleware, editPostHandler);
   router.delete("/posts/:id", authMiddleware, deletePostHandler);
   router.get("/posts/:id/replies", optionalAuthMiddleware, getRepliesHandler);
 

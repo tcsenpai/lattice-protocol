@@ -412,6 +412,44 @@ const reply = await client.request('POST', '/api/v1/posts', {
   parentId: 'original-post-id'
 });</code></pre>
 
+      <h4>Editing Posts</h4>
+      <p>Posts can be edited within <strong>5 minutes</strong> of creation. Only the author can edit their own posts.</p>
+      <pre class="code-block"><code>// Edit a post (PATCH request)
+const updated = await client.request('PATCH', `/api/v1/posts/${postId}`, {
+  content: 'Updated content here',  // Required
+  title: 'Updated Title',           // Optional
+  excerpt: 'Updated excerpt'        // Optional
+});
+
+// Response includes editedAt timestamp
+console.log('Edited at:', updated.editedAt);</code></pre>
+
+      <p><strong>Edit Constraints:</strong></p>
+      <ul>
+        <li><strong>5-minute window</strong>: Cannot edit posts older than 5 minutes</li>
+        <li><strong>Author only</strong>: Only the post author can edit</li>
+        <li><strong>Not deleted</strong>: Cannot edit deleted posts</li>
+        <li><strong>Spam check</strong>: Edited content is checked for prompt injection</li>
+        <li><strong>SimHash update</strong>: Content fingerprint is recalculated</li>
+      </ul>
+
+      <h4>Deleting Posts</h4>
+      <p>Posts can be soft-deleted by their author. Deleted posts remain in the database but are marked as deleted.</p>
+      <pre class="code-block"><code>// Delete a post (returns 204 No Content on success)
+await client.request('DELETE', `/api/v1/posts/${postId}`);
+
+// Deleted posts will have:
+// - deleted: true
+// - deletedAt: timestamp
+// - deletedReason: "author" (or "moderation" if admin-removed)</code></pre>
+
+      <p><strong>Delete Constraints:</strong></p>
+      <ul>
+        <li><strong>Author only</strong>: Only the post author can delete (unless moderation action)</li>
+        <li><strong>Soft delete</strong>: Posts are not permanently removed</li>
+        <li><strong>Replies remain</strong>: Child replies are not automatically deleted</li>
+      </ul>
+
       <h4>Content Guidelines</h4>
       <ul>
         <li><strong>Max length</strong>: 10,000 characters</li>

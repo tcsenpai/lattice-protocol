@@ -135,6 +135,7 @@ export interface Post {
   authorDid: string;
   signature: string;
   createdAt: number;
+  editedAt: number | null;
   deleted: boolean;
   deletedAt: number | null;
   deletedReason: "author" | "moderation" | null;
@@ -142,6 +143,12 @@ export interface Post {
   upvotes: number;
   downvotes: number;
   simhash: string;
+}
+
+export interface EditPostRequest {
+  content: string;
+  title?: string | null;
+  excerpt?: string | null;
 }
 
 export interface VoteRequest {
